@@ -16,7 +16,15 @@ addParameter(p,'alen',1.0); % axis length
 addParameter(p,'alw',2); % axis line width
 addParameter(p,'als','-'); % axis line style
 addParameter(p,'PLOT_AXIS_TIP',true);
-addParameter(p,'tipsize',0.1); % axis tip size w.r.t. alen
+addParameter(p,'atipsize',0.1); % axis tip size w.r.t. alen
+addParameter(p,'PLOT_SPHERE',true);
+addParameter(p,'sr',0.1); % sphere radius
+addParameter(p,'sfc',0.5*[1,1,1]); % sphere face color
+addParameter(p,'sfa',0.5); % sphere face alpha
+addParameter(p,'text_str','');
+addParameter(p,'text_fs',15);
+addParameter(p,'text_fn','consolas');
+addParameter(p,'text_color','k');
 parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;
@@ -25,7 +33,15 @@ alen = p.Results.alen;
 alw = p.Results.alw;
 als = p.Results.als;
 PLOT_AXIS_TIP = p.Results.PLOT_AXIS_TIP;
-tipsize = p.Results.tipsize;
+atipsize = p.Results.atipsize;
+PLOT_SPHERE = p.Results.PLOT_SPHERE;
+sr = p.Results.sr;
+sfc = p.Results.sfc;
+sfa = p.Results.sfa;
+text_str = p.Results.text_str;
+text_fs = p.Results.text_fs;
+text_fn = p.Results.text_fn;
+text_color = p.Results.text_color;
 
 % Get p and R
 p = T([1,2,3],4);
@@ -50,7 +66,7 @@ if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     
     if PLOT_AXIS_TIP
         [xs,ys,zs] = sphere(20);
-        fv = surf2patch(tipsize*alen*xs,tipsize*alen*ys,tipsize*alen*zs);
+        fv = surf2patch(atipsize*alen*xs,atipsize*alen*ys,atipsize*alen*zs);
         
         ax = p(1)+alen*ex(1);
         ay = p(2)+alen*ex(2);
@@ -83,6 +99,21 @@ if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
         set(h{fig_idx,subfig_idx}.sz_t,'Matrix',tform);
     end
     
+    if PLOT_SPHERE
+        [x,y,z] = ellipsoid(0,0,0,sr,sr,sr,30);
+        fv = surf2patch(x,y,z);
+        h{fig_idx,subfig_idx}.sphere = patch(fv,...
+            'EdgeColor','none','FaceColor',sfc,'FaceAlpha',sfa,'facelighting','gouraud');
+        h{fig_idx,subfig_idx}.sphere_t = hgtransform;
+        set(h{fig_idx,subfig_idx}.sphere,'parent',h{fig_idx,subfig_idx}.sphere_t);
+        tform = pr2t(p);
+        set(h{fig_idx,subfig_idx}.sphere_t,'Matrix',tform);
+    end
+    
+    if ~isempty(text_str)
+        h{fig_idx,subfig_idx}.text = text(p(1),p(2),p(3),[' ',text_str],...
+            'FontSize',text_fs,'FontName',text_fn,'Color',text_color,'Interpreter','none');
+    end
     
 else
     
@@ -118,6 +149,15 @@ else
         set(h{fig_idx,subfig_idx}.sz_t,'Matrix',tform);
     end
     
+    if PLOT_SPHERE
+        tform = pr2t(p);
+        set(h{fig_idx,subfig_idx}.sphere_t,'Matrix',tform);
+    end
+    
+    if ~isempty(text_str)
+        h{fig_idx,subfig_idx}.text.Position = p;
+        h{fig_idx,subfig_idx}.text.String = [' ',text_str];
+    end
     
 end
 

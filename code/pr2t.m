@@ -6,10 +6,9 @@ function T = pr2t(p,R)
 if nargin == 1
     if numel(p) == 3
         % p is given
-        p = p;
         R = eye(3,3);
     elseif numel(p) == 3
-        % R is given
+        % R is given at 'p'
         R = p;
         p = [0,0,0];
     end
