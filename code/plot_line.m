@@ -29,7 +29,6 @@ text_fs = p.Results.text_fs;
 text_fn = p.Results.text_fn;
 text_color = p.Results.text_color;
 
-
 % Plot start here
 if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     h{fig_idx,subfig_idx}.first_flag = false;

@@ -15,7 +15,7 @@ addParameter(p,'PLOT_AXIS',true);
 addParameter(p,'alen',1.0); % axis length
 addParameter(p,'alw',2); % axis line width
 addParameter(p,'als','-'); % axis line style
-addParameter(p,'PLOT_AXIS_TIP',true);
+addParameter(p,'PLOT_AXIS_TIP',false);
 addParameter(p,'atipsize',0.1); % axis tip size w.r.t. alen
 addParameter(p,'PLOT_SPHERE',true);
 addParameter(p,'sr',0.1); % sphere radius
@@ -25,6 +25,7 @@ addParameter(p,'text_str','');
 addParameter(p,'text_fs',15);
 addParameter(p,'text_fn','consolas');
 addParameter(p,'text_color','k');
+addParameter(p,'TEXT_AT_ZTIP',0);
 parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;
@@ -42,6 +43,7 @@ text_str = p.Results.text_str;
 text_fs = p.Results.text_fs;
 text_fn = p.Results.text_fn;
 text_color = p.Results.text_color;
+TEXT_AT_ZTIP = p.Results.TEXT_AT_ZTIP;
 
 % Get p and R
 p = T([1,2,3],4);
@@ -111,7 +113,11 @@ if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     end
     
     if ~isempty(text_str)
-        h{fig_idx,subfig_idx}.text = text(p(1),p(2),p(3),[' ',text_str],...
+        text_p = p;
+        if TEXT_AT_ZTIP
+            text_p = text_p + alen*ez;
+        end
+        h{fig_idx,subfig_idx}.text = text(text_p(1),text_p(2),text_p(3),[' ',text_str],...
             'FontSize',text_fs,'FontName',text_fn,'Color',text_color,'Interpreter','none');
     end
     
@@ -155,7 +161,11 @@ else
     end
     
     if ~isempty(text_str)
-        h{fig_idx,subfig_idx}.text.Position = p;
+        text_p = p;
+        if TEXT_AT_ZTIP
+            text_p = text_p + alen*ez;
+        end
+        h{fig_idx,subfig_idx}.text.Position = text_p;
         h{fig_idx,subfig_idx}.text.String = [' ',text_str];
     end
     
