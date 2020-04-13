@@ -13,7 +13,9 @@ if ~isempty(idx_fr)
     % update p
     chain.joint(idx_to).p = joint_fr.R*joint_to.p_offset + joint_fr.p; 
     % update R
-    chain.joint(idx_to).R = joint_fr.R*joint_to.R_offset*rpy2r(joint_to.a*joint_to.q); 
+    q = joint_to.q;
+    a = joint_to.a;
+    chain.joint(idx_to).R = joint_fr.R*joint_to.R_offset*rodrigues(a,q);
 end
 
 % Recursive

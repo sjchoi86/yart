@@ -50,4 +50,3 @@ else
     tform = pr2t(p,R);
     set(h{fig_idx,subfig_idx}.patch_t,'Matrix',tform);
 end
-

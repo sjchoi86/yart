@@ -1,16 +1,11 @@
-function R = rpy2r(rpy_deg)
+function R = rpy2r(rpy_rad)
 % 
-% Euler angle (roll, pitch, and yaw) in degree to rotation matrix
+% Euler angle (roll, pitch, and yaw) in radian to rotation matrix
 %
 
-r_deg = rpy_deg(1);
-p_deg = rpy_deg(2);
-y_deg = rpy_deg(3);
-
-D2R = pi/180;
-r_rad = r_deg*D2R;
-p_rad = p_deg*D2R;
-y_rad = y_deg*D2R;
+r_rad = rpy_rad(1);
+p_rad = rpy_rad(2);
+y_rad = rpy_rad(3);
 
 cos_r = cos(r_rad); sin_r = sin(r_rad);
 cos_p = cos(p_rad); sin_p = sin(p_rad);

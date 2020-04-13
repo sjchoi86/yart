@@ -17,6 +17,8 @@ addParameter(p,'view_info','');
 addParameter(p,'axis_info','');
 addParameter(p,'SET_DRAGZOOM',1);
 addParameter(p,'GRID_ON',1);
+addParameter(p,'MULTIPLE_MONITOR',0); % handling multiple-monitors
+addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors case
 parse(p,varargin{:});
 position = p.Results.position;
 ADD_TOOLBAR = p.Results.ADD_TOOLBAR;
@@ -25,18 +27,29 @@ view_info = p.Results.view_info;
 axis_info = p.Results.axis_info;
 SET_DRAGZOOM = p.Results.SET_DRAGZOOM;
 GRID_ON = p.Results.GRID_ON;
+MULTIPLE_MONITOR = p.Results.MULTIPLE_MONITOR;
+monitor_idx = p.Results.monitor_idx;
 
 
 if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
     h{fig.Number}.first_flag = false;
     h{fig.Number}.fig = fig;
     
-    % Current size of the screen
-    sz = get(0, 'ScreenSize');
+    if MULTIPLE_MONITOR
+        MP = get(0, 'MonitorPositions');
+        sz = MP(monitor_idx,3:4);
+        fig_pos = [position(1)*sz(1),position(2)*sz(2),position(3)*sz(1),position(4)*sz(2)];
+        fig_pos(1:2) = fig_pos(1:2) + MP(monitor_idx,1:2);
+        set(fig,'Position',fig_pos);
+    else
+        % Single monitor case
+        % Current size of the screen
+        sz = get(0, 'ScreenSize');
+        % Set the position of a figure relative to the screen size
+        fig_pos = [position(1)*sz(3),position(2)*sz(4),position(3)*sz(3),position(4)*sz(4)];
+        set(fig,'Position',fig_pos);
+    end
     
-    % Set the position of a figure relative to the screen size
-    fig_pos = [position(1)*sz(3),position(2)*sz(4),position(3)*sz(3),position(4)*sz(4)];
-    set(fig,'Position',fig_pos);
     
     % Add toolbar to a figure
     if ADD_TOOLBAR
@@ -76,6 +89,12 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
     if GRID_ON
         grid_on('color','k','alpha',0.9);
     end
+    
+    % Hold on
+    hold on;
+    
+    % Cam light
+    camlight('infinite'); material('dull'); % cam light
     
 else
     

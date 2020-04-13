@@ -1,6 +1,6 @@
 function w = r2w(R)
 %
-% Get angular velocity in degree vector from a rotation matrix
+% Get angular velocity [in radian] vector from a rotation matrix
 %
 
 if isequal(R,eye(3,3))
@@ -12,6 +12,3 @@ else
     theta = atan2(norm(l), R(1,1)+R(2,2)+R(3,3)-1);
     w = theta * l / norm(l);
 end
-
-% To Degree
-w = w * 180 / pi;
