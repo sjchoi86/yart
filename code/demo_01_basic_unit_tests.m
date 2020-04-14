@@ -13,7 +13,9 @@ ccc
 % 9. Interpolate between Two Rotation Matrices, R1 and R2
 % 10. Load URDF and Generate a Kinemactic Chain
 % 11. Rodrigues' formula: get R from a constant angular velocity vector
+% 12. Solve IK using a numerical method
 %
+% 
 %% 1. Make figures with different positions
 ccc
 
@@ -311,138 +313,8 @@ ccc
 
 % Which model to use
 model_name = 'coman'; % coman / panda / sawyer
-
-% Parse URDF
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
-s = xml2struct(urdf_path);
-robot = s.robot;
-
-% Parse joint
-chain = struct();
-chain.name = model_name;
-chain.n_joint = length(robot.joint); % number of joint
-chain.n_rev_joint = 0;
-chain.joint_names = cell(1,chain.n_joint);
-chain.rev_joint_names = [];
-chain.parent_link_names = cell(1,chain.n_joint); % temporary parent link names
-chain.child_link_names = cell(1,chain.n_joint); % temporary child link names
-for i_idx = 1:chain.n_joint
-    joint_i = robot.joint{i_idx}; % joint
-    chain.joint(i_idx).name = joint_i.Attributes.name; % joint name
-    chain.joint_names{i_idx} = chain.joint(i_idx).name;
-    chain.joint(i_idx).parent = [];
-    chain.joint(i_idx).childs = [];
-    chain.joint(i_idx).p = [0,0,0]';
-    chain.joint(i_idx).R = eye(3,3);
-    chain.joint(i_idx).q = 0;
-    chain.joint(i_idx).type = joint_i.Attributes.type; % joint type (revolute/fixed)
-    if isequal(chain.joint(i_idx).type,'revolute')
-        chain.joint(i_idx).a = str2num(joint_i.axis.Attributes.xyz)'; % revolute axis
-        chain.n_rev_joint = chain.n_rev_joint + 1;
-        chain.rev_joint_names{chain.n_rev_joint} = chain.joint(i_idx).name; % append revolute joint name
-    else
-        chain.joint(i_idx).a = [0,0,0]';
-    end
-    chain.joint(i_idx).p_offset = str2num(joint_i.origin.Attributes.xyz)';
-    chain.joint(i_idx).R_offset = rpy2r(str2num(joint_i.origin.Attributes.rpy));
-    chain.joint(i_idx).parent_link = joint_i.parent.Attributes.link;
-    chain.joint(i_idx).child_link = joint_i.child.Attributes.link;
-    chain.parent_link_names{i_idx} = joint_i.parent.Attributes.link;
-    chain.child_link_names{i_idx} = joint_i.child.Attributes.link;
-end
-
-% Parse link
-chain.n_link = length(robot.link); % number of link
-chain.link_names = cell(1,chain.n_link);
-for i_idx = 1:chain.n_link
-    link_i = robot.link{i_idx};
-    chain.link(i_idx).name = link_i.Attributes.name; % link name
-    chain.link_names{i_idx} = chain.link(i_idx).name;
-    % Get the parent joint index of the current link
-    chain.link(i_idx).joint_idx = idx_cell(chain.child_link_names,chain.link(i_idx).name);
-    % Parse link mesh offset
-    try
-        rpy = str2num(link_i.visual.origin.Attributes.rpy)';
-        xyz = str2num(link_i.visual.origin.Attributes.xyz)';
-    catch
-        rpy = [0,0,0]';
-        xyz = [0,0,0]';
-    end
-    p_offset = xyz;
-    R_offset = rpy2r(rpy);
-    chain.link(i_idx).p_offset = p_offset;
-    chain.link(i_idx).R_offset = R_offset;
-    % Parse link mesh scale
-    try
-        scale = str2num(link_i.visual.geometry.mesh.Attributes.scale)';
-    catch
-        scale = [1,1,1]';
-    end
-    chain.link(i_idx).scale = scale;
-    % Parse link mesh path
-    try
-        [~,name,ext] = fileparts(link_i.visual.geometry.mesh.Attributes.filename);
-        [f,~,~] = fileparts(urdf_path);
-        mesh_path = [f,'/visual/',name,ext];
-    catch
-        mesh_path = '';
-    end
-    chain.link(i_idx).fv = '';
-    if exist(mesh_path,'file')
-        [~,~,ext] = fileparts(mesh_path);
-        switch lower(ext)
-            case '.stl'
-                fv = load_stl(mesh_path);
-                fv.vertices = chain.link(i_idx).scale'.*fv.vertices;
-                fv.vertices = fv.vertices * chain.link(i_idx).R_offset'; % rotate mesh locally
-                fv.vertices = fv.vertices + chain.link(i_idx).p_offset'; % translate mesh
-                chain.link(i_idx).fv = fv;
-            otherwise
-                fprintf(2,'Unsupported file type:[%s].\n',ext);
-        end
-    end
-    % Parse link box
-    try
-        box = str2num(link_i.visual.geometry.box.Attributes.size)';
-    catch
-        box = '';
-    end
-    try
-        box_scale = str2num(link_i.visual.geometry.box.Attributes.scale)';
-    catch
-        box_scale = [1,1,1]';
-    end
-    chain.link(i_idx).box = box;
-    chain.link(i_idx).box_scale = box_scale;
-    
-end
-
-% Determine parent/child structure
-for i_idx = 1:chain.n_joint
-    parent = idx_cell(chain.child_link_names,chain.joint(i_idx).parent_link);
-    childs = idx_cell(chain.parent_link_names,chain.joint(i_idx).child_link);
-    chain.joint(i_idx).parent = parent;
-    chain.joint(i_idx).childs = childs;
-end
-
-% Zero positions
-chain = update_chain_q(chain,chain.rev_joint_names,zeros(1,chain.n_rev_joint));
-chain = fk_chain(chain);
-
-% Get size of the model
-xyz_min = inf*ones(3,1);
-xyz_max = -inf*ones(3,1);
-for i_idx = 1:chain.n_joint
-    xyz_min = min(xyz_min,chain.joint(i_idx).p);
-    xyz_max = max(xyz_max,chain.joint(i_idx).p);
-end
-xyz_len = xyz_max - xyz_min;
-chain.xyz_min = xyz_min;
-chain.xyz_max = xyz_max;
-chain.xyz_len = xyz_len;
-
-fprintf('Done.\n');
-
+chain = get_chain_from_urdf(model_name,urdf_path);
 % Plot robot
 chain = update_chain_q(chain,chain.rev_joint_names,360*ones(1,chain.n_rev_joint)*D2R);
 chain = fk_chain(chain);
@@ -451,9 +323,9 @@ fig = plot_chain(chain,'view_info',[88,4],'axis_info','',...
     'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
     'title_str',sprintf('[%s]',chain.name),...
     'MULTIPLE_MONITOR',1,'monitor_idx',1);
-
-%% Animate
-for tick = 1:360
+plot_T(pr2t([0,0,0]',rpy2r([0,0,0]')),'PLOT_SPHERE',0,'alw',4);
+% Animate
+for tick = 1:0
     chain = update_chain_q(chain,chain.rev_joint_names,tick*ones(1,chain.n_rev_joint)*D2R);
     chain = fk_chain(chain);
     fig = plot_chain(chain,'view_info',[88,4],'axis_info','',...
@@ -492,12 +364,48 @@ for tick = 1:100 % increase the angular velocity
     drawnow
 end
 
-%%
+%% 12. Solve IK using a numerical method
 ccc
 
+% Get the kinematic chain of the model
+model_name = 'coman'; % coman / panda / sawyer
+urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
+chain = get_chain_from_urdf(model_name,urdf_path);
+chain = update_chain_q(chain,chain.rev_joint_names,zeros(chain.n_rev_joint,1));
+chain = fk_chain(chain); % initialize chain
 
+% Initial IK
+ik = init_ik(chain);
+ik = add_ik(ik,'joint_name','RWrj2',...
+    'p',chain.joint(idx_cell(chain.joint_names,'RWrj2')).p,'IK_P',1);
+ik = add_ik(ik,'joint_name','LWrj2',...
+    'p',chain.joint(idx_cell(chain.joint_names,'LWrj2')).p,'IK_P',1);
 
+% Initialize the Kinematic Chain
+q = (ik.joint_limits_lower+ik.joint_limits_upper)/2; % median pose
+chain = update_chain_q(chain,ik.joint_names_control,q);
+chain = fk_chain(chain); % initialize chain
 
+% Start IK
+while (ik.tick < ik.max_tick)
+    
+    % Run IK
+    [ik,chain,q] = onestep_ik(ik,chain,q);
+    
+    % Check oscilation (limbo) of IK
+    [FLAG,ik,best_err] = check_ik_oscilating(ik);
+    if FLAG, chain = ik.chain; end
+    
+    % Plot IK status
+    fig = plot_ik_chain(chain,ik);
+    
+    if FLAG
+        fprintf(2,'IK is in Limbo.\n');
+        break;
+    end
+end
+
+%% 
 
 
 

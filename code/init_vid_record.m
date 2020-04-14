@@ -1,6 +1,6 @@
 function vid_obj = init_vid_record(vid_path,varargin)
 %
-% Initialize the video object for recording 
+% Initialize the video object for recording
 %
 
 % Parse options
@@ -12,12 +12,14 @@ HZ = p.Results.HZ;
 SAVE_VID = p.Results.SAVE_VID;
 
 % Open a video object
-[f,~,~] = fileparts(vid_path);
-make_dir_if_not_exist(f);
 vid_path_temp = get_temp_name(vid_path);
-vid_obj.writer = VideoWriter(vid_path_temp,'MPEG-4');
-vid_obj.writer.FrameRate = HZ;
-open(vid_obj.writer); % open video object
+if SAVE_VID
+    [f,~,~] = fileparts(vid_path);
+    make_dir_if_not_exist(f);
+    vid_obj.writer = VideoWriter(vid_path_temp,'MPEG-4');
+    vid_obj.writer.FrameRate = HZ;
+    open(vid_obj.writer); % open video object
+end
 
 % Pass options
 vid_obj.vid_path = vid_path;
