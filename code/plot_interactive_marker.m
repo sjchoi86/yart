@@ -14,7 +14,7 @@ addParameter(p,'clen',1.0);
 addParameter(p,'clen_er',1.2);
 addParameter(p,'tlw',4.0);          % translation line width
 addParameter(p,'rlw',2.0);          % rotation line width
-addParameter(p,'sr',0.1);
+addParameter(p,'sr',0.1);           % sphere radius
 addParameter(p,'fa',0.6);
 addParameter(p,'USE_DRAGZOOM',true);
 addParameter(p,'VERBOSE',false);

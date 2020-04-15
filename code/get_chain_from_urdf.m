@@ -142,6 +142,8 @@ for i_idx = 1:chain.n_link
         switch lower(ext)
             case '.stl'
                 fv = load_stl(mesh_path);
+                [fv.vertices,fv.faces]= patchslim(fv.vertices,fv.faces); % patch slim
+                fv = reducepatch(fv,1/2); % reduce half
                 fv.vertices = chain.link(i_idx).scale'.*fv.vertices;
                 fv.vertices = fv.vertices * chain.link(i_idx).R_offset'; % rotate mesh locally
                 fv.vertices = fv.vertices + chain.link(i_idx).p_offset'; % translate mesh
@@ -190,4 +192,10 @@ chain.xyz_min = xyz_min;
 chain.xyz_max = xyz_max;
 chain.xyz_len = xyz_len;
 
-% 
+% Other informations
+chain.rev_joint_idxs = zeros(length(chain.rev_joint_names),1);
+for i_idx = 1:length(chain.rev_joint_names)
+    chain.rev_joint_idxs(i_idx) = idx_cell(chain.joint_names,chain.rev_joint_names{i_idx});
+end
+
+

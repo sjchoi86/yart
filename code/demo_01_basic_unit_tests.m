@@ -14,6 +14,9 @@ ccc
 % 10. Load URDF and Generate a Kinemactic Chain
 % 11. Rodrigues' formula: get R from a constant angular velocity vector
 % 12. Solve IK using a numerical method
+% 13. Plot Kinematic Chain Structure
+% 14. IK with Interactive Markers
+%
 %
 % 
 %% 1. Make figures with different positions
@@ -405,7 +408,179 @@ while (ik.tick < ik.max_tick)
     end
 end
 
-%% 
+%% 13. Plot Kinematic Chain Structure
+ccc
+
+% Get the kinematic chain of the model
+model_name = 'coman'; % coman / panda / sawyer
+urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
+chain = get_chain_from_urdf(model_name,urdf_path);
+
+% Plot chain graph
+plot_chain_graph(chain);
+
+%% 14. IK with Interactive Markers
+ccc
+global g_im
+
+% Get the kinematic chain of the model
+model_name = 'panda'; % coman / panda / sawyer
+urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
+chain = get_chain_from_urdf(model_name,urdf_path);
+
+% Configuration
+switch model_name
+    case 'coman'
+        ik_config(1) = struct('name','RWrj2','IK_P',1,'IK_R',0);
+        ik_config(2) = struct('name','LWrj2','IK_P',1,'IK_R',0);
+        ik_config(3) = struct('name','RElbj','IK_P',1,'IK_R',0);
+        ik_config(4) = struct('name','LElbj','IK_P',1,'IK_R',0);
+    case 'panda'
+        ik_config(1) = struct('name','hand','IK_P',1,'IK_R',1);
+end
+
+% Initialize IK with interactive marker
+idxs = [];
+for i_idx = 1:length(ik_config)
+    idxs = union(idxs,get_idx_route(chain,ik_config(i_idx).name)); % all joints to targets
+end
+idxs = intersect(idxs,chain.rev_joint_idxs); % only for revolute joints
+for i_idx = 1:length(ik_config)
+    % idxs = setdiff(idxs,idx_cell(chain.joint_names,ik_config(i_idx).name)); % exclude target ones
+end
+joint_names_control = cell(1,length(idxs));
+for i_idx = 1:length(idxs)
+    joint_names_control{i_idx} = chain.joint(idxs(i_idx)).name;
+end
+ik = init_ik(chain,'joint_names_control',joint_names_control,...
+    'dq_min',0*D2R,'dq_max',10*D2R);
+for i_idx = 1:length(ik_config)
+    joint_name = ik_config(i_idx).name;
+    ik = add_ik(ik,'joint_name',joint_name,...
+        'p',chain.joint(idx_cell(chain.joint_names,joint_name)).p,...
+        'R',chain.joint(idx_cell(chain.joint_names,joint_name)).R,...
+        'IK_P',ik_config(i_idx).IK_P,'IK_R',ik_config(i_idx).IK_R);
+end
+
+% Save video
+vid_obj = init_vid_record('../vid/ut14_interactive_ik.mp4','HZ',20,'SAVE_VID',1); % init video
+
+% Plot model and interactive markers
+PLOT_LINK = 0; PLOT_JOINT_AXIS = 0; PLOT_JOINT_SPHERE = 0;
+fig = plot_chain(chain,'PLOT_LINK',PLOT_LINK,'PLOT_JOINT_AXIS',PLOT_JOINT_AXIS,...
+    'PLOT_JOINT_SPHERE',PLOT_JOINT_SPHERE);
+for i_idx = 1:ik.n_target
+    clen = max(chain.xyz_len)/10;
+    plot_interactive_marker('subfig_idx',i_idx,'T',pr2t(ik.targets(i_idx).p,ik.targets(i_idx).R),...
+        'clen',clen,'clen_er',1.2,'sr',clen/5);
+end
+
+% Run IK
+q = get_q_chain(chain,ik.joint_names_control);
+while ishandle(fig)
+    
+    % Run IK
+    [ik,chain,q] = onestep_ik(ik,chain,q);
+    
+    % Update IK target
+    for i_idx = 1:ik.n_target
+        T_i = g_im{i_idx}.T;
+        [p_i,R_i] = t2pr(T_i);
+        ik.targets(i_idx).p = p_i;
+        ik.targets(i_idx).R = R_i;
+    end
+    
+    % Animate
+    title_str = sprintf('[%d] err:[%.3f]',ik.tick,ik.err);
+    fig = plot_chain(chain,'title_str',title_str,'PLOT_LINK',PLOT_LINK,'PLOT_JOINT_AXIS',PLOT_JOINT_AXIS,...
+        'PLOT_JOINT_SPHERE',PLOT_JOINT_SPHERE);
+    drawnow limitrate; record_vid(vid_obj);
+end
+end_vid_record(vid_obj);
+ca; % close all 
+
+%%
+ccc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

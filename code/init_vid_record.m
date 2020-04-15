@@ -2,6 +2,11 @@ function vid_obj = init_vid_record(vid_path,varargin)
 %
 % Initialize the video object for recording
 %
+% Usage:
+%   vid_obj = init_vid_record('');
+%   record_vid(vid_obj);
+%   end_vid_record(vid_obj);
+%
 
 % Parse options
 p = inputParser;

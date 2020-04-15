@@ -12,6 +12,7 @@ if isempty(h), for i = 1:10,h{i}.first_flag = true; end; end
 p = inputParser;
 addParameter(p,'position',[0.0,0.5,0.3,0.5]);
 addParameter(p,'ADD_TOOLBAR',1);
+addParameter(p,'AXIS_EQUAL',1);
 addParameter(p,'AXES_LABEL',1);
 addParameter(p,'view_info','');
 addParameter(p,'axis_info','');
@@ -22,6 +23,7 @@ addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors cas
 parse(p,varargin{:});
 position = p.Results.position;
 ADD_TOOLBAR = p.Results.ADD_TOOLBAR;
+AXIS_EQUAL = p.Results.AXIS_EQUAL;
 AXES_LABEL = p.Results.AXES_LABEL;
 view_info = p.Results.view_info;
 axis_info = p.Results.axis_info;
@@ -61,7 +63,9 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
     ax.Toolbar = [];
     
     % Axis equal
-    axis equal;
+    if AXIS_EQUAL
+        axis equal;
+    end
     
     % Set axes strings
     if AXES_LABEL

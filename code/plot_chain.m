@@ -9,20 +9,20 @@ if isempty(h), for i = 1:10, for j = 1:100, h{i,j}.first_flag = true; end; end; 
 
 % Parse options
 max_len = max(chain.xyz_len);
-def_r = max_len / 10;
+def_r = max_len / 15;
 p = inputParser;
 addParameter(p,'fig_idx',1);
 addParameter(p,'subfig_idx',1);
-addParameter(p,'fig_pos',[0.5,0.5,0.2,0.35]); % figure position
+addParameter(p,'fig_pos',[0.0,0.4,0.35,0.5]); % figure position
 addParameter(p,'MULTIPLE_MONITOR',0); % handling multiple-monitors
 addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors case
 addParameter(p,'view_info',[80,16]);
 addParameter(p,'axis_info','');
 addParameter(p,'PLOT_MESH',1);
 addParameter(p,'mfc',0.5*[1,1,1]); % mesh face color
-addParameter(p,'mfa',0.2); % mesh face alpha
+addParameter(p,'mfa',0.4); % mesh face alpha
 addParameter(p,'bfc',0.5*[1,1,1]); % box face color
-addParameter(p,'bfa',0.2); % box face alpha
+addParameter(p,'bfa',0.5); % box face alpha
 addParameter(p,'PLOT_LINK',1);
 addParameter(p,'llc','k'); % link line color
 addParameter(p,'llw',2); % link line width
@@ -41,12 +41,12 @@ addParameter(p,'PLOT_JOINT_SPHERE',1);
 addParameter(p,'jsfc','k'); % joint sphere face color
 addParameter(p,'jsfa',0.5); % joint sphere face alpha
 addParameter(p,'jsr',def_r/10); % joint sphere radius
-addParameter(p,'PRINT_JOINT_NAME',1);
+addParameter(p,'PRINT_JOINT_NAME',0);
 addParameter(p,'LOCATE_JOINT_NAME_AT_ROTATE_AXIS',0);
 addParameter(p,'jnfs',15); % joint name font size
 addParameter(p,'jnfn','consolas'); % joint name font name
 addParameter(p,'jnfc','k'); % joint name font color
-addParameter(p,'title_str','');
+addParameter(p,'title_str',chain.name);
 addParameter(p,'tfs',20); % title font size
 addParameter(p,'tfn','consolas'); % title font name
 parse(p,varargin{:});

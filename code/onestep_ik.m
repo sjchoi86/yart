@@ -51,7 +51,9 @@ end
 
 % Trim dq
 dq = ik.stepsize*dq;
-if max(abs(dq)) < ik.dq_min % if it is too small
+if max(abs(dq)) == 0
+    
+elseif max(abs(dq)) < ik.dq_min % if it is too small
     dq = dq/max(abs(dq))*ik.dq_min;
 elseif max(abs(dq)) > ik.dq_max % if it is too big
     dq = dq/max(abs(dq))*ik.dq_max;
