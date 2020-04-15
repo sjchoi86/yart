@@ -32,7 +32,6 @@ faces_matrix = [1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
 vertex_matrix = vertex_matrix.*xyz_len;
 vertex_matrix = vertex_matrix + xyz_min; % do basic translation
 
-
 if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     h{fig_idx,subfig_idx}.first_flag = false;
     h{fig_idx,subfig_idx}.fig = figure(fig_idx);

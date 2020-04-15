@@ -8,13 +8,14 @@ persistent h
 if isempty(h), for i = 1:10, for j = 1:100, h{i,j}.first_flag = true; end; end; end
 
 % Parse input arguments
+len = norm(p1-p2);
 p = inputParser;
 addParameter(p,'fig_idx',1);
 addParameter(p,'subfig_idx',1);
 addParameter(p,'alpha',0.5);
 addParameter(p,'color','r');
-addParameter(p,'sw',0.1); % stem width
-addParameter(p,'tw',0.2); % tip width
+addParameter(p,'sw',len/20); % stem width
+addParameter(p,'tw',len/10); % tip width
 parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;

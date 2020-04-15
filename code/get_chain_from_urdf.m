@@ -49,6 +49,8 @@ function chain = get_chain_from_urdf(model_name,urdf_path)
 %     fv
 %     box
 %     box_scale
+%
+%     c             : center of mass position 
 % 
 
 
@@ -74,6 +76,8 @@ for i_idx = 1:chain.n_joint
     chain.joint(i_idx).p = [0,0,0]';
     chain.joint(i_idx).R = eye(3,3);
     chain.joint(i_idx).q = 0;
+    chain.joint(i_idx).q_prev = 0;
+    chain.joint(i_idx).q_diff = 0;
     chain.joint(i_idx).type = joint_i.Attributes.type; % joint type (revolute/fixed)
     % Joint revolute axis
     if isequal(chain.joint(i_idx).type,'revolute')
@@ -98,6 +102,9 @@ for i_idx = 1:chain.n_joint
     chain.joint(i_idx).child_link = joint_i.child.Attributes.link;
     chain.parent_link_names{i_idx} = joint_i.parent.Attributes.link;
     chain.child_link_names{i_idx} = joint_i.child.Attributes.link;
+    % Velocity
+    chain.joint(i_idx).v = [0,0,0]';
+    chain.joint(i_idx).w = [0,0,0]';
 end
 
 % Parse link information
@@ -136,12 +143,13 @@ for i_idx = 1:chain.n_link
     catch
         mesh_path = '';
     end
+    chain.link(i_idx).mesh_path = mesh_path;
     chain.link(i_idx).fv = '';
-    if exist(mesh_path,'file')
-        [~,~,ext] = fileparts(mesh_path);
+    if exist(chain.link(i_idx).mesh_path,'file')
+        [~,~,ext] = fileparts(chain.link(i_idx).mesh_path);
         switch lower(ext)
             case '.stl'
-                fv = load_stl(mesh_path);
+                fv = load_stl(chain.link(i_idx).mesh_path);
                 [fv.vertices,fv.faces]= patchslim(fv.vertices,fv.faces); % patch slim
                 fv = reducepatch(fv,1/2); % reduce half
                 fv.vertices = chain.link(i_idx).scale'.*fv.vertices;
@@ -152,6 +160,18 @@ for i_idx = 1:chain.n_link
                 fprintf(2,'Unsupported file type:[%s].\n',ext);
         end
     end
+    % Get CAD Bounding Cube
+    if ~isempty(chain.link(i_idx).fv)
+        fv = chain.link(i_idx).fv;
+        bcube.xyz_min = min(fv.vertices)';
+        bcube.xyz_max = max(fv.vertices)';
+        bcube.xyz_len = bcube.xyz_max - bcube.xyz_min;
+        bcube.c_offset = 0.5*(bcube.xyz_max + bcube.xyz_min); % offset of CoM of this link
+    else
+        bcube = '';
+    end
+    chain.link(i_idx).bcube = bcube;
+    
     % Parse link box
     try
         box = str2num(link_i.visual.geometry.box.Attributes.size)';
@@ -197,5 +217,4 @@ chain.rev_joint_idxs = zeros(length(chain.rev_joint_names),1);
 for i_idx = 1:length(chain.rev_joint_names)
     chain.rev_joint_idxs(i_idx) = idx_cell(chain.joint_names,chain.rev_joint_names{i_idx});
 end
-
 

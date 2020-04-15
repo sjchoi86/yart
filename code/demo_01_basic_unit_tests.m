@@ -16,9 +16,11 @@ ccc
 % 12. Solve IK using a numerical method
 % 13. Plot Kinematic Chain Structure
 % 14. IK with Interactive Markers
+% 15. Load CAD and find its bounding cube
+% 16. Animate Chain with Linear and Angular Velocities
 %
 %
-% 
+%
 %% 1. Make figures with different positions
 ccc
 
@@ -179,6 +181,7 @@ ccc
 %
 % Apply 'p_offset' first w.r.t parent's 'R', and then, apply 'R_offset'
 %
+chain.name = 'custom chain';
 chain.joint(1) = struct('name','world','parent',[],'childs',[2],'p',[0,0,0]','R',eye(3,3),...
     'q',0,'a',[0,0,0]','p_offset',[1,0,0]','R_offset',rpy2r([0,0,0]));
 chain.joint(2) = struct('name','j1','parent',[1],'childs',[3],'p',[0,0,0]','R',eye(3,3),...
@@ -206,8 +209,6 @@ xyz_len = xyz_max - xyz_min;
 chain.xyz_min = xyz_min;
 chain.xyz_max = xyz_max;
 chain.xyz_len = xyz_len;
-
-
 
 vid_obj = init_vid_record('../vid/ut06_kinematic_chain_fk.mp4','HZ',40,'SAVE_VID',0); % init video
 max_tick = 360;
@@ -412,7 +413,7 @@ end
 ccc
 
 % Get the kinematic chain of the model
-model_name = 'coman'; % coman / panda / sawyer
+model_name = 'sawyer'; % coman / panda / sawyer
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
 chain = get_chain_from_urdf(model_name,urdf_path);
 
@@ -424,7 +425,7 @@ ccc
 global g_im
 
 % Get the kinematic chain of the model
-model_name = 'panda'; % coman / panda / sawyer
+model_name = 'sawyer'; % coman / panda / sawyer
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
 chain = get_chain_from_urdf(model_name,urdf_path);
 
@@ -437,6 +438,8 @@ switch model_name
         ik_config(4) = struct('name','LElbj','IK_P',1,'IK_R',0);
     case 'panda'
         ik_config(1) = struct('name','hand','IK_P',1,'IK_R',1);
+    case 'sawyer'
+        ik_config(1) = struct('name','right_hand','IK_P',1,'IK_R',1);
 end
 
 % Initialize IK with interactive marker
@@ -453,7 +456,8 @@ for i_idx = 1:length(idxs)
     joint_names_control{i_idx} = chain.joint(idxs(i_idx)).name;
 end
 ik = init_ik(chain,'joint_names_control',joint_names_control,...
-    'dq_min',0*D2R,'dq_max',10*D2R);
+    'stepsize',1.0*D2R,'stepsize_min',1.0*D2R,'stepsize_max',5.0*D2R,...
+    'stepsize_inc_rate',2.0,'stepsize_dec_rate',0.5);
 for i_idx = 1:length(ik_config)
     joint_name = ik_config(i_idx).name;
     ik = add_ik(ik,'joint_name',joint_name,...
@@ -463,7 +467,7 @@ for i_idx = 1:length(ik_config)
 end
 
 % Save video
-vid_obj = init_vid_record('../vid/ut14_interactive_ik.mp4','HZ',20,'SAVE_VID',1); % init video
+vid_obj = init_vid_record('../vid/ut14_interactive_ik.mp4','HZ',20,'SAVE_VID',0); % init video
 
 % Plot model and interactive markers
 PLOT_LINK = 0; PLOT_JOINT_AXIS = 0; PLOT_JOINT_SPHERE = 0;
@@ -480,7 +484,9 @@ q = get_q_chain(chain,ik.joint_names_control);
 while ishandle(fig)
     
     % Run IK
+    iclk_ik = clock;
     [ik,chain,q] = onestep_ik(ik,chain,q);
+    ems_ik = etime(clock,iclk_ik)*1000;
     
     % Update IK target
     for i_idx = 1:ik.n_target
@@ -491,16 +497,91 @@ while ishandle(fig)
     end
     
     % Animate
-    title_str = sprintf('[%d] err:[%.3f]',ik.tick,ik.err);
+    title_str = sprintf('[%d] err:[%.3f] stepsize:[%.2f]deg [%.2f]ms',...
+        ik.tick,ik.err,ik.stepsize*R2D,ems_ik);
     fig = plot_chain(chain,'title_str',title_str,'PLOT_LINK',PLOT_LINK,'PLOT_JOINT_AXIS',PLOT_JOINT_AXIS,...
         'PLOT_JOINT_SPHERE',PLOT_JOINT_SPHERE);
     drawnow limitrate; record_vid(vid_obj);
 end
 end_vid_record(vid_obj);
-ca; % close all 
+ca; % close all
 
-%%
+%% 15. Load CAD and find its bounding cube
 ccc
+
+% Get the kinematic chain of the model
+model_name = 'sawyer'; % coman / panda / sawyer
+urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
+chain = get_chain_from_urdf(model_name,urdf_path);
+
+for i_idx = 10
+    link_i = chain.link(i_idx);
+    
+    if ~isempty(link_i.fv)
+        % Get the bounding cube of the link
+        bcube.xyz_min = min(link_i.fv.vertices)';
+        bcube.xyz_max = max(link_i.fv.vertices)';
+        bcube.xyz_len = bcube.xyz_max - bcube.xyz_min;
+        bcube.c_offset = 0.5*(bcube.xyz_max + bcube.xyz_min);
+        
+        % Plot the CAD mesh and its bounding cube
+        % T = pr2t([0,0,0],rpy2r(2*pi*rand(1,3))); % some random position
+        T = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R); % actual link position
+        set_fig_position(figure(1),'position',[0.5,0.6,0.2,0.35],'ADD_TOOLBAR',1,'view_info',[80,16]);
+        h = patch('faces',link_i.fv.faces,'vertices',link_i.fv.vertices,...
+            'FaceColor',0.5*[1,1,1],'EdgeColor','none','FaceLighting','gouraud',...
+            'AmbientStrength',0.2,'FaceAlpha',0.3); % plot CAD
+        tf = hgtransform;
+        set(h,'parent',tf);
+        set(tf,'Matrix',T); % move CAD to T
+        plot_cube(T,bcube.xyz_min,bcube.xyz_len,'subfig_idx',i_idx,...
+            'color','b','alpha',0.2,'edge_color','k'); % plot cube
+        plot_T(T,'subfig_idx',2*i_idx,'alen',0.1,'alw',3,'PLOT_SPHERE',0); % basis axis
+        T_com = T*p2t(bcube.c_offset); % CoM transformation in the global coordinates 
+        plot_T(T_com,'subfig_idx',1+2*i_idx+1,...
+            'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.015,'sfc','r'); % link CoM
+        plot_title(link_i.mesh_path);
+        
+    end
+end
+
+%% 16. Animate Chain with Linear and Angular Velocities
+ccc
+
+% Get the kinematic chain of the model
+model_name = 'sawyer'; % coman / panda / sawyer
+urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
+chain = get_chain_from_urdf(model_name,urdf_path);
+chain.dt = 0.05; % set time step 
+
+% Animate
+vid_obj = init_vid_record('../vid/ut16_velocities.mp4','HZ',round(1/chain.dt),'SAVE_VID',0); 
+max_tick = 180;
+vals = [linspace(0,+90,max_tick/2),linspace(90,0,max_tick/2)];
+for tick = 1:max_tick
+    chain = update_chain_q(chain,chain.rev_joint_names,vals(tick)*ones(chain.n_rev_joint,1)*D2R,...
+        'IGNORE_LIMIT',0);
+    chain = fk_chain(chain); % forward kinematics
+    chain = fv_chain(chain); % forward velocities
+    title_str = sprintf('[%.3f]sec Linear Velocity (red) Angular Velocity (blue)',tick*chain.dt);
+    plot_chain(chain,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
+        'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.5,'w_rate',0.3,...
+        'title_str',title_str,'view_info',[35,47]);
+    drawnow limitrate; record_vid(vid_obj);
+end
+end_vid_record(vid_obj);
+
+%% 17. 
+ccc
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-function [ik,chain,q] = onestep_ik(ik,chain,q)
+function [ik,chain,q,LIMBO] = onestep_ik(ik,chain,q)
 %
 % Run one-step IK
 %
@@ -14,12 +14,18 @@ dq = compute_ik_dq(J_total,ik_err_total,ik_W_total); % numerical gradient
 ik_err_val = norm(ik_err_total);
 ik.err = ik_err_val;
 
+% Check limbo
+LIMBO = check_ik_oscilating(ik);
+if LIMBO
+    ik.stepsize = ik.stepsize*ik.stepsize_dec_rate;
+end
+
 % Step-size scheduling
 ik.err_diff = ik.err_prev-ik.err;
 if ik.err_diff > 0 % if it gets better
-    ik.stepsize = ik.stepsize*1.2;
+    ik.stepsize = ik.stepsize*ik.stepsize_inc_rate;
 else
-    ik.stepsize = ik.stepsize*0.3;
+    ik.stepsize = ik.stepsize*ik.stepsize_dec_rate;
 end
 ik.stepsize = min(max(ik.stepsize,ik.stepsize_min),ik.stepsize_max);
 ik.err_prev = ik.err;
@@ -49,17 +55,8 @@ if sum(is_not_violated == 0) > 0 % if violation occured
     dq(is_not_violated==1) = dq_temp;
 end
 
-% Trim dq
-dq = ik.stepsize*dq;
-if max(abs(dq)) == 0
-    
-elseif max(abs(dq)) < ik.dq_min % if it is too small
-    dq = dq/max(abs(dq))*ik.dq_min;
-elseif max(abs(dq)) > ik.dq_max % if it is too big
-    dq = dq/max(abs(dq))*ik.dq_max;
-end
-
 % Update position
+dq = scale_max(dq,ik.stepsize);
 q = q + dq;
 q = min(max(q,ik.joint_limits_lower),ik.joint_limits_upper); % trim limits
 chain = update_chain_q(chain,ik.joint_names_control,q);

@@ -7,20 +7,20 @@ D2R = pi/180;
 % Parse options
 p = inputParser;
 addParameter(p,'joint_names_control',chain.rev_joint_names);
-addParameter(p,'stepsize',0.5);
-addParameter(p,'stepsize_min',0.1);
-addParameter(p,'stepsize_max',5.0);
+addParameter(p,'stepsize',0.5*D2R);
+addParameter(p,'stepsize_min',0.1*D2R);
+addParameter(p,'stepsize_max',5.0*D2R);
+addParameter(p,'stepsize_inc_rate',1.1);
+addParameter(p,'stepsize_dec_rate',0.5);
 addParameter(p,'max_tick',1e4);
-addParameter(p,'dq_min',0.5*D2R);
-addParameter(p,'dq_max',20.0*D2R);
 parse(p,varargin{:});
 joint_names_control = p.Results.joint_names_control;
 stepsize = p.Results.stepsize;
 stepsize_min = p.Results.stepsize_min;
 stepsize_max = p.Results.stepsize_max;
+stepsize_inc_rate = p.Results.stepsize_inc_rate;
+stepsize_dec_rate = p.Results.stepsize_dec_rate;
 max_tick = p.Results.max_tick;
-dq_min = p.Results.dq_min;
-dq_max = p.Results.dq_max;
 
 
 % Initialize IK
@@ -34,8 +34,8 @@ ik.err_diff = 0;
 ik.stepsize = stepsize;
 ik.stepsize_min = stepsize_min;
 ik.stepsize_max = stepsize_max;
-ik.dq_min = dq_min;
-ik.dq_max = dq_max;
+ik.stepsize_inc_rate = stepsize_inc_rate;
+ik.stepsize_dec_rate = stepsize_dec_rate;
 
 ik.max_tick = max_tick;
 ik.q_list = zeros(ik.max_tick,ik.n_joint_control); % q list 
@@ -56,7 +56,7 @@ ik.n_target = 0;
 ik.targets = [];
 
 % IK position and rotation weights
-ik_p_weight = 10.0;
-ik_R_weight = 0.1;
+ik_p_weight = 40.0/max(chain.xyz_len);
+ik_R_weight = 0.05;
 ik.W_full = diag([ik_p_weight,ik_p_weight,ik_p_weight,...
     ik_R_weight,ik_R_weight,ik_R_weight]);

@@ -23,6 +23,8 @@ addParameter(p,'mfc',0.5*[1,1,1]); % mesh face color
 addParameter(p,'mfa',0.4); % mesh face alpha
 addParameter(p,'bfc',0.5*[1,1,1]); % box face color
 addParameter(p,'bfa',0.5); % box face alpha
+addParameter(p,'PLOT_BCUBE',0);
+addParameter(p,'PLOT_COM',0);
 addParameter(p,'PLOT_LINK',1);
 addParameter(p,'llc','k'); % link line color
 addParameter(p,'llw',2); % link line width
@@ -41,6 +43,11 @@ addParameter(p,'PLOT_JOINT_SPHERE',1);
 addParameter(p,'jsfc','k'); % joint sphere face color
 addParameter(p,'jsfa',0.5); % joint sphere face alpha
 addParameter(p,'jsr',def_r/10); % joint sphere radius
+
+addParameter(p,'PLOT_VELOCITY',0);
+addParameter(p,'v_rate',1.0); % linear velocitiy arraw length rate
+addParameter(p,'w_rate',0.5); % angular velocitiy arraw length rate
+
 addParameter(p,'PRINT_JOINT_NAME',0);
 addParameter(p,'LOCATE_JOINT_NAME_AT_ROTATE_AXIS',0);
 addParameter(p,'jnfs',15); % joint name font size
@@ -62,6 +69,8 @@ mfc = p.Results.mfc;
 mfa = p.Results.mfa;
 bfc = p.Results.bfc;
 bfa = p.Results.bfa;
+PLOT_BCUBE = p.Results.PLOT_BCUBE;
+PLOT_COM = p.Results.PLOT_COM;
 PLOT_LINK = p.Results.PLOT_LINK;
 llc = p.Results.llc;
 llw = p.Results.llw;
@@ -80,6 +89,11 @@ PLOT_JOINT_SPHERE = p.Results.PLOT_JOINT_SPHERE;
 jsr = p.Results.jsr;
 jsfc = p.Results.jsfc;
 jsfa = p.Results.jsfa;
+
+PLOT_VELOCITY = p.Results.PLOT_VELOCITY;
+v_rate = p.Results.v_rate;
+w_rate = p.Results.w_rate;
+
 PRINT_JOINT_NAME = p.Results.PRINT_JOINT_NAME;
 LOCATE_JOINT_NAME_AT_ROTATE_AXIS = p.Results.LOCATE_JOINT_NAME_AT_ROTATE_AXIS;
 jnfs = p.Results.jnfs;
@@ -92,7 +106,6 @@ tfn = p.Results.tfn;
 
 % Plot start here
 if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
-    h{fig_idx,subfig_idx}.first_flag = false;
     h{fig_idx,subfig_idx}.fig = figure(fig_idx);
     
     % Make figure
@@ -107,6 +120,8 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
             link_i = chain.link(i_idx);
             joint_idx = link_i.joint_idx;
             if (~isempty(joint_idx))
+                
+                % Mother joint position 
                 p_link = chain.joint(joint_idx).p;
                 R_link = chain.joint(joint_idx).R;
                 
@@ -154,6 +169,44 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
                     set(h{fig_idx,subfig_idx}.box_t{i_idx},'Matrix',tform);
                 end
                 
+            end
+        end
+    end
+    
+    % Plot the bounding cube or the center of mass of a link
+    if PLOT_BCUBE || PLOT_COM
+        for i_idx = 1:chain.n_link 
+            link_i = chain.link(i_idx);
+            bcube = link_i.bcube;
+            if PLOT_BCUBE && (~isempty(bcube))
+                xyz_min = bcube.xyz_min;
+                xyz_len = bcube.xyz_len;
+                vertex_matrix = [0 0 0;1 0 0;1 1 0;0 1 0;0 0 1;1 0 1;1 1 1;0 1 1];
+                faces_matrix = [1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
+                vertex_matrix = vertex_matrix.*xyz_len';
+                vertex_matrix = vertex_matrix + xyz_min'; 
+                h{fig_idx,subfig_idx}.bcube{i_idx} = patch('Vertices',vertex_matrix,...
+                    'Faces',faces_matrix,...
+                    'FaceColor','b','FaceAlpha',0.2,...
+                    'EdgeColor','k','lineWidth',1);
+                h{fig_idx,subfig_idx}.bcube_t{i_idx} = hgtransform;
+                set(h{fig_idx,subfig_idx}.bcube{i_idx},...
+                    'parent',h{fig_idx,subfig_idx}.bcube_t{i_idx});
+                tform = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R);
+                set(h{fig_idx,subfig_idx}.bcube_t{i_idx},'Matrix',tform);
+            end
+            
+            if PLOT_COM && (~isempty(bcube))
+                sr = 0.02;
+                [x,y,z] = ellipsoid(0,0,0,sr,sr,sr,30);
+                fv = surf2patch(x,y,z);
+                h{fig_idx,subfig_idx}.com{i_idx} = patch(fv,...
+                    'EdgeColor','none','FaceColor','r','FaceAlpha',0.5,'facelighting','gouraud');
+                h{fig_idx,subfig_idx}.com_t{i_idx} = hgtransform;
+                set(h{fig_idx,subfig_idx}.com{i_idx},'parent',h{fig_idx,subfig_idx}.com_t{i_idx});
+                T = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R);
+                tform = T*pr2t(bcube.c_offset);
+                set(h{fig_idx,subfig_idx}.com_t{i_idx},'Matrix',tform);
             end
         end
     end
@@ -226,11 +279,46 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
         end
     end
     
+    % Plot linear and angular velocities
+    if PLOT_VELOCITY
+        for i_idx = 1:chain.n_link
+            link_i = chain.link(i_idx);
+            if ~isempty(link_i.fv) % if mesh exists,
+                joint_i = chain.joint(link_i.joint_idx);
+                T_joint = pr2t(joint_i.p,joint_i.R); % actual link position
+                T_com = T_joint*p2t(link_i.bcube.c_offset); % center of mass
+                p_com = t2p(T_com);
+                v = joint_i.v; % linear velocity at the world coordinate
+                w = joint_i.w; % angular velocity at the world coordinate
+                if h{fig_idx,subfig_idx}.first_flag
+                    v = [0,0,0]';
+                    w = [0,0,0]';
+                end
+                p_v = p_com + v*v_rate;
+                p_w = p_com + w*w_rate;
+                % Linear velocity (red)
+                len = norm(p_com-p_v);
+                fv = get_arrow_3d(p_com,p_v,'color','r','stemWidth',len/20,'tipWidth',len/10,...
+                    'facealpha',0.5);
+                h{fig_idx,subfig_idx}.lvel{i_idx} = patch(fv,'facecolor','r','edgeColor','none',...
+                    'FaceAlpha',0.5,'FaceLighting','gouraud');
+                % Angular velocity (blue)
+                len = norm(p_com-p_w);
+                fv = get_arrow_3d(p_com,p_w,'color','b','stemWidth',len/20,'tipWidth',len/10,...
+                    'facealpha',0.5);
+                h{fig_idx,subfig_idx}.avel{i_idx} = patch(fv,'facecolor','b','edgeColor','none',...
+                    'FaceAlpha',0.5,'FaceLighting','gouraud');
+            end
+        end
+    end
+    
     % Plot title
     if ~isempty(title_str)
         h{fig_idx,subfig_idx}.title = title(title_str,'fontsize',tfs,'fontname',tfn);
     end
     
+    % Not the first anymore 
+    h{fig_idx,subfig_idx}.first_flag = false;
 else
     
     % Plot mesh
@@ -259,6 +347,24 @@ else
                     set(h{fig_idx,subfig_idx}.box_t{i_idx},'Matrix',tform);
                 end
                 
+            end
+        end
+    end
+    
+    % Plot the bounding cube or the center of mass of a link
+    if PLOT_BCUBE || PLOT_COM
+        for i_idx = 1:chain.n_link 
+            link_i = chain.link(i_idx);
+            bcube = link_i.bcube;
+            if PLOT_BCUBE && (~isempty(bcube))
+                tform = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R);
+                set(h{fig_idx,subfig_idx}.bcube_t{i_idx},'Matrix',tform);
+            end
+            
+            if PLOT_COM && (~isempty(bcube))
+                T = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R);
+                tform = T*pr2t(bcube.c_offset);
+                set(h{fig_idx,subfig_idx}.com_t{i_idx},'Matrix',tform);
             end
         end
     end
@@ -327,11 +433,40 @@ else
         end
     end
     
+    
+    % Plot linear and angular velocities
+    if PLOT_VELOCITY
+        for i_idx = 1:chain.n_link
+            link_i = chain.link(i_idx);
+            if ~isempty(link_i.fv) % if mesh exists,
+                joint_i = chain.joint(link_i.joint_idx);
+                T_joint = pr2t(joint_i.p,joint_i.R); % actual link position
+                T_com = T_joint*p2t(link_i.bcube.c_offset); % center of mass
+                p_com = t2p(T_com);
+                v = joint_i.v; % linear velocity at the world coordinate
+                w = joint_i.w; % angular velocity at the world coordinate
+                p_v = p_com + v*v_rate;
+                p_w = p_com + w*w_rate;
+                % Linear velocity
+                len = norm(p_com-p_v);
+                fv = get_arrow_3d(p_com,p_v,'color','r','stemWidth',len/20,'tipWidth',len/10,...
+                    'facealpha',0.5);
+                h{fig_idx,subfig_idx}.lvel{i_idx}.Faces = fv.faces;
+                h{fig_idx,subfig_idx}.lvel{i_idx}.Vertices = fv.vertices;
+                % Angular velocity
+                len = norm(p_com-p_w);
+                fv = get_arrow_3d(p_com,p_w,'color','b','stemWidth',len/20,'tipWidth',len/10,...
+                    'facealpha',0.5);
+                h{fig_idx,subfig_idx}.avel{i_idx}.Faces = fv.faces;
+                h{fig_idx,subfig_idx}.avel{i_idx}.Vertices = fv.vertices;
+            end
+        end
+    end
+    
     % Plot title
     if ~isempty(title_str)
         h{fig_idx,subfig_idx}.title.String = title_str;
     end
-    
 end
 
 fig = h{fig_idx,subfig_idx}.fig;
