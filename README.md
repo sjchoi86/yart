@@ -67,6 +67,23 @@ ans =
     box_scale
 ```
 
+It also suppeorts an `augmentaed Jacobian method`for handling multiple IK targets with a straightforward syntax:
+```
+% Initial IK
+ik = init_ik(chain);
+% Add IK Targets 
+ik = add_ik(ik,'joint_name','RWrj2',...
+    'p',p_trgt1,'R',R_trgt1,'IK_P',1,'IK_R',1);
+ik = add_ik(ik,'joint_name','LWrj2',...
+    'p',p_trgt2,'R',R_trgt2,'IK_P',1,'IK_R',1);
+while true
+  ...
+  % Run IK in Loop 
+  [ik,chain,q] = onestep_ik(ik,chain,q);
+  ...
+end
+```
+
 This package will also implement handling motion capture data in `.bvh` formats. 
 
 ### Interactive inverse kinematics
