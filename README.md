@@ -83,8 +83,7 @@ while true
   ...
 end
 ```
-
-This package will also implement handling motion capture data in `.bvh` formats. 
+It supports joint position limit handling by excluding the next possible violating joints. We tried soft-barrier-based methods but this simple heuristics work bettern in practice, at least in our cases. Handling self-collision will soon be implemented. 
 
 ### Interactive inverse kinematics
 
@@ -93,6 +92,13 @@ This package will also implement handling motion capture data in `.bvh` formats.
 ### Cmputing linear and angular velocities of links
 
 [![](http://img.youtube.com/vi/klvGY-akl58/0.jpg)](http://www.youtube.com/watch?v=klvGY-akl58 "")
+
+### TODO List:
+- Handling motion capture data in `.bvh` formats. 
+- Some basic machine learning methods such as Gaussian Processes and Bayesian Optimization.
+- Mobile robotics and path planning methods such as rapidly exploring random trees (RRT) and vector field histogram (VFH).
+- Model predictive control (MPC) 
+- Trajectory optimization 
 
 More information can be found in the following link:
 https://sites.google.com/view/sungjoon-choi/yart.
