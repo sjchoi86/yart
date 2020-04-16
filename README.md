@@ -24,6 +24,7 @@ Following is an exampled of a `chain` structure parsed from Sawyer:
 Two important sub-structures, `joint` and `link`, look like
 ```
 >> chain.joint
+
 ans = 
 
   1×20 struct array with fields:
@@ -65,6 +66,8 @@ ans =
     box
     box_scale
 ```
+
+This package will also implement handling motion capture data in `.bvh` formats. 
 
 ### Interactive inverse kinematics
 
