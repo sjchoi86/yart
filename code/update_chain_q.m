@@ -9,6 +9,8 @@ addParameter(p,'IGNORE_LIMIT',0);
 parse(p,varargin{:});
 IGNORE_LIMIT = p.Results.IGNORE_LIMIT;
 
+q = mod(q+pi,2*pi)-pi; % -pi to +pi
+
 for i_idx = 1:length(names)
     joint_idx = idx_cell(chain.joint_names,names{i_idx});
     if isfield(chain.joint(joint_idx),'limit')

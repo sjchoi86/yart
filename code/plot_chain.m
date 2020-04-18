@@ -8,7 +8,11 @@ persistent h
 if isempty(h), for i = 1:10, for j = 1:100, h{i,j}.first_flag = true; end; end; end
 
 % Parse options
-max_len = max(chain.xyz_len);
+if isfield(chain,'xyz_len')
+    max_len = max(chain.xyz_len);
+else
+    max_len = 1.0;
+end
 def_r = max_len / 15;
 p = inputParser;
 addParameter(p,'fig_idx',1);
@@ -43,11 +47,9 @@ addParameter(p,'PLOT_JOINT_SPHERE',1);
 addParameter(p,'jsfc','k'); % joint sphere face color
 addParameter(p,'jsfa',0.5); % joint sphere face alpha
 addParameter(p,'jsr',def_r/10); % joint sphere radius
-
 addParameter(p,'PLOT_VELOCITY',0);
 addParameter(p,'v_rate',1.0); % linear velocitiy arraw length rate
 addParameter(p,'w_rate',0.5); % angular velocitiy arraw length rate
-
 addParameter(p,'PRINT_JOINT_NAME',0);
 addParameter(p,'LOCATE_JOINT_NAME_AT_ROTATE_AXIS',0);
 addParameter(p,'jnfs',15); % joint name font size
@@ -232,10 +234,10 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
             joint_i = chain.joint(i_idx);
             p = joint_i.p;
             R = joint_i.R;
-            a = joint_i.a; % axis
             ex = R(:,1); ey = R(:,2); ez = R(:,3);
             
             if PLOT_ROTATE_AXIS
+                a = joint_i.a; % axis
                 if sum(a) ~= 0
                     axis_i = R*a;
                     p1 = p;
@@ -266,6 +268,7 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
             end
             if PRINT_JOINT_NAME
                 if LOCATE_JOINT_NAME_AT_ROTATE_AXIS
+                    a = joint_i.a; % axis
                     axis_i = R*a;
                     text_p = p+axis_i*ral;
                 else
@@ -391,9 +394,9 @@ else
             joint_i = chain.joint(i_idx);
             p = joint_i.p;
             R = joint_i.R;
-            a = joint_i.a; % axis
             ex = R(:,1); ey = R(:,2); ez = R(:,3);
             if PLOT_ROTATE_AXIS
+                a = joint_i.a; % axis
                 if sum(a) ~= 0
                     axis_i = R*a;
                     p1 = p;
@@ -421,6 +424,7 @@ else
             end
             if PRINT_JOINT_NAME
                 if LOCATE_JOINT_NAME_AT_ROTATE_AXIS
+                    a = joint_i.a; % axis
                     axis_i = R*a;
                     text_p = p+axis_i*ral;
                 else

@@ -3,57 +3,6 @@ function chain = get_chain_from_urdf(model_name,urdf_path)
 % Here, we follow the parameters defined by Kajita et al. except we use multiple childs structure.
 % We separate joints from links by adapting this multiple childs structure.
 %
-% Example) 
-%
-% chain = 
-%
-%                 name: 'panda'
-%               n_joint: 10
-%           n_rev_joint: 7
-%           joint_names: {1×10 cell}
-%       rev_joint_names: {'joint1'  'joint2'  'joint3'  'joint4'  'joint5'  'joint6'  'joint7'}
-%     parent_link_names: {'world'  'base_link'  'link0'  'link1'  'link2'  'link3'  'link4'  'link5'  'link6'  'link7'}
-%      child_link_names: {'base_link'  'link0'  'link1'  'link2'  'link3'  'link4'  'link5'  'link6'  'link7'  'link8'}
-%                 joint: [1×10 struct]
-%                n_link: 11
-%            link_names: {1×11 cell}
-%                  link: [1×11 struct]
-%               xyz_min: [3×1 double]
-%               xyz_max: [3×1 double]
-%               xyz_len: [3×1 double]
-%
-%
-% chain.jonit = 
-%
-%     name
-%     parent
-%     childs
-%     p
-%     R
-%     q
-%     type
-%     a
-%     p_offset
-%     R_offset
-%     parent_link
-%     child_link
-%
-%
-% chain.link = 
-% 
-%     name
-%     joint_idx
-%     p_offset
-%     R_offset
-%     scale
-%     fv
-%     box
-%     box_scale
-%
-%     c             : center of mass position 
-% 
-
-
 % Parse URDF
 s = xml2struct(urdf_path);
 robot = s.robot;
@@ -61,6 +10,7 @@ robot = s.robot;
 % Parse joint information
 chain = struct();
 chain.name = model_name;
+chain.robot = robot;
 chain.n_joint = length(robot.joint); % number of joint
 chain.n_rev_joint = 0;
 chain.joint_names = cell(1,chain.n_joint);
@@ -171,7 +121,6 @@ for i_idx = 1:chain.n_link
         bcube = '';
     end
     chain.link(i_idx).bcube = bcube;
-    
     % Parse link box
     try
         box = str2num(link_i.visual.geometry.box.Attributes.size)';
@@ -185,13 +134,12 @@ for i_idx = 1:chain.n_link
     end
     chain.link(i_idx).box = box;
     chain.link(i_idx).box_scale = box_scale;
-    
 end
 
 % Determine parent/child structure
 for i_idx = 1:chain.n_joint
     parent = idx_cell(chain.child_link_names,chain.joint(i_idx).parent_link);
-    childs = idx_cell(chain.parent_link_names,chain.joint(i_idx).child_link);
+    childs = idx_cell_multiple(chain.parent_link_names,chain.joint(i_idx).child_link);
     chain.joint(i_idx).parent = parent;
     chain.joint(i_idx).childs = childs;
 end

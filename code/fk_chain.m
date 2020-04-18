@@ -11,11 +11,15 @@ if ~isempty(idx_fr)
     joint_fr = chain.joint(idx_fr);
     joint_to = chain.joint(idx_to);
     % update p
-    chain.joint(idx_to).p = joint_fr.R*joint_to.p_offset + joint_fr.p; 
+    chain.joint(idx_to).p = joint_fr.R*joint_to.p_offset + joint_fr.p;
     % update R
-    q = joint_to.q;
-    a = joint_to.a;
-    chain.joint(idx_to).R = joint_fr.R*joint_to.R_offset*rodrigues(a,q);
+    if isfield(joint_to,'a') % this may cause some time delays.. (~10% load)
+        q = joint_to.q;
+        a = joint_to.a;
+        chain.joint(idx_to).R = joint_fr.R*joint_to.R_offset*rodrigues(a,q);
+    else
+        chain.joint(idx_to).R = joint_fr.R*joint_to.R_offset;
+    end
 end
 
 % Recursive

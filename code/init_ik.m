@@ -22,10 +22,13 @@ stepsize_inc_rate = p.Results.stepsize_inc_rate;
 stepsize_dec_rate = p.Results.stepsize_dec_rate;
 max_tick = p.Results.max_tick;
 
-
 % Initialize IK
 ik.chain = chain; % save the kinematic chain structure
 ik.joint_names_control = joint_names_control; % joints to control
+ik.joint_idxs_control = zeros(1,length(joint_names_control));
+for i_idx = 1:length(joint_names_control)
+    ik.joint_idxs_control(i_idx) = idx_cell(chain.joint_names,ik.joint_names_control{i_idx});
+end
 ik.n_joint_control = length(ik.joint_names_control);
 ik.tick = 0;
 ik.err = inf;

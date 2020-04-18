@@ -1,6 +1,13 @@
-function idx_list = idx_cell(cell_data,query_data)
+function idx = idx_cell(cell_data,query_data)
 %
 % Find the index whose corresponding item matches the 'query_data'
+%  We assume that idx is a single or empty index. 
 %
 
-idx_list = ind2sub(size(cell_data),find(cellfun(@(x)strcmp(x,query_data),cell_data)));
+idx = '';
+for i_idx = 1:length(cell_data)
+    if isequal(cell_data{i_idx},query_data)
+        idx = i_idx;
+        return;
+    end
+end
