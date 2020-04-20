@@ -20,6 +20,9 @@ addParameter(p,'SET_DRAGZOOM',1);
 addParameter(p,'GRID_ON',1);
 addParameter(p,'MULTIPLE_MONITOR',0); % handling multiple-monitors
 addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors case
+addParameter(p,'SET_BG_WHITE',1);
+addParameter(p,'title_str','');
+addParameter(p,'title_fs',20);
 parse(p,varargin{:});
 position = p.Results.position;
 ADD_TOOLBAR = p.Results.ADD_TOOLBAR;
@@ -31,6 +34,9 @@ SET_DRAGZOOM = p.Results.SET_DRAGZOOM;
 GRID_ON = p.Results.GRID_ON;
 MULTIPLE_MONITOR = p.Results.MULTIPLE_MONITOR;
 monitor_idx = p.Results.monitor_idx;
+SET_BG_WHITE = p.Results.SET_BG_WHITE;
+title_str = p.Results.title_str;
+title_fs = p.Results.title_fs;
 
 
 if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
@@ -100,8 +106,20 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
     % Cam light
     camlight('infinite'); material('dull'); % cam light
     
-else
+    % Make BG While
+    if SET_BG_WHITE
+        set(gcf,'Color','w');
+    end
     
+    % Title
+    if ~isempty(title_str)
+        h{fig.Number}.title = title(title_str,'fontname','consolas','fontsize',title_fs);
+    end
+else
+    % Title
+    if ~isempty(title_str)
+        h{fig.Number}.title.String = title_str;
+    end
 end
 
 
