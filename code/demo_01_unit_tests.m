@@ -1210,92 +1210,92 @@ for tick = 1:L % for all tick
     drawnow;
 end
 
-%% 28. Motion Retargeting 
+%% 28. Motion Retargeting (on-going)
 ccc
 
 % Get the robot model
-model_name = 'coman'; % atlas / baxter / coman / 
+model_name = 'atlas'; % atlas / baxter / coman / 
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
-chain_model = get_chain_from_urdf(model_name,urdf_path);
-joi_model = get_joi_chain(chain_model);
-
-% Plot the robot model
+chain_model = get_chain_from_urdf(model_name,urdf_path,'CENTER_ROBOT',1);
 chain_model = update_chain_q(chain_model,...
     chain_model.rev_joint_names,0*ones(1,chain_model.n_rev_joint)*D2R);
-chain_model = fk_chain(chain_model);
-plot_chain(chain_model,'fig_idx',1,'view_info',[88,4],'axis_info','',...
+chain_model = fk_chain(chain_model); % FK 
+joi_model = get_joi_chain(chain_model);
+
+% Get CMU MoCap DB
+mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
+n_mocap = length(mocap_infos);
+m = mocap_infos(999); 
+bvh_path = m.full_path;  % bvh path
+[mocap_name,action_str] = get_cmu_mocap_name(m,'mocap_folder','../../cmu-mocap/'); 
+fprintf('[[%s]-[%s] description:[%s].\n bvh_path:[%s].\n',...
+    m.subject,m.action,action_str,bvh_path);
+[skeleton,time] = load_raw_bvh(bvh_path);
+HZ = 30; 
+chains_mocap = get_chain_from_skeleton(skeleton,time,...
+    'USE_METER',1,'ROOT_AT_ORIGIN',1,'Z_UP',1,'HZ',HZ);
+joi_mocap = get_joi_mocap(m.subject);
+
+% Plot the robot model
+plot_chain(chain_model,...
+    'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info','',...
     'PLOT_MESH',1,'mfa',0.2,'PLOT_LINK',1,'PLOT_ROTATE_AXIS',1,'PLOT_JOINT_AXIS',1,...
     'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
     'title_str',sprintf('[%s]',chain_model.name),...
     'MULTIPLE_MONITOR',0,'monitor_idx',1);
 plot_joi_chain(chain_model,joi_model,...
-    'fig_idx',1,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_model.n));
-
-%%
-
-
-% Get all bvh paths of CMU MoCap DB
-mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
-n_mocap = length(mocap_infos);
-fprintf('We have [%d] mocaps.\n',n_mocap);
-
-% Select one mocap
-m = mocap_infos(999); % 
-bvh_path = m.full_path;  % bvh path
-[mocap_name,action_str] = get_cmu_mocap_name(m,'mocap_folder','../../cmu-mocap/'); 
-fprintf('[[%s]-[%s] description:[%s].\n bvh_path:[%s].\n',...
-    m.subject,m.action,action_str,bvh_path);
-
-joi_mocap = get_joi_mocap(m.subject);
+    'fig_idx',1,'subfig_idx',1,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_model.n));
+plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',1,'PLOT_SPHERE',0);
 
 % Get skeleton and kinematic chains
-[skeleton,time] = load_raw_bvh(bvh_path);
-HZ = 30; 
-chains_mocap = get_chain_from_skeleton(skeleton,time,...
-    'USE_METER',1,'ROOT_AT_ORIGIN',1,'Z_UP',1,'HZ',HZ);
 L = min(length(chains_mocap),5*HZ); % max 5sec
 for tick = 1:L % for all tick 
     chain_mocap = chains_mocap{tick};
     chain_mocap = upfront_chain(chain_mocap,joi_mocap); % upfront
     title_str = sprintf('[%d/%d][%.2f]s [%s]',tick,L,tick/HZ,action_str);
     plot_chain(chain_mocap,...
-        'fig_idx',2,'fig_pos',[0.5,0.6,0.3,0.4],...
+        'fig_idx',1,'subfig_idx',2,'fig_pos',[0.5,0.6,0.3,0.4],...
         'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.02,...
         'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.02,'jsfa',0.1,'PRINT_JOINT_NAME',0,...
-        'title_str',title_str,'tfs',13);
+        'title_str',title_str,'tfs',25);
     plot_joi_chain(chain_mocap,joi_mocap,...
-        'fig_idx',2,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_mocap.n),...
-        'PRINT_JOI_NAME',1);
-    plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',2,'PLOT_SPHERE',0);
+        'fig_idx',1,'subfig_idx',2,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_mocap.n),...
+        'PRINT_JOI_NAME',0);
     drawnow;
 end
 
+%% 29. Get Random Pose of a Robot Model
+ccc
 
+% Robot 
+model_name = 'sawyer'; % atlas / baxter / coman / panda / sawyer
+urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
+chain_model = get_chain_from_urdf(model_name,urdf_path,'CENTER_ROBOT',1);
+joi_model = get_joi_chain(chain_model);
 
+% Plot chain graph
+plot_chain_graph(chain_model);
 
+% Get joint names to control from JOI types
+joi_types = {'rh','lh'};
+jnames_ctrl = get_jnames_ctrl_from_joi_types(...
+    chain_model,joi_model,joi_types,'EXCLUDE_TARGET',1);
+
+% Sample Random Robot Pose and Plot
+chain_model = update_chain_q(chain_model,jnames_ctrl,360*rand(1,length(jnames_ctrl))*D2R);
+chain_model = fk_chain(chain_model);
+
+% Plot the Robot Model
+ral = chain_model.xyz_len(3)/10; rasw = ral/10; ratw = ral/5;
+plot_chain(chain_model,...
+    'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info','',...
+    'PLOT_MESH',1,'mfa',0.4,'PLOT_LINK',1,...
+    'PLOT_ROTATE_AXIS',1,'ral',ral,'rasw',rasw,'ratw',ratw,...
+    'PLOT_JOINT_AXIS',1,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
+    'title_str',sprintf('[%s]',chain_model.name),...
+    'MULTIPLE_MONITOR',0,'monitor_idx',1);
 
 %%
-clc;ca
-
-plot_chain_graph(chain_mocap);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

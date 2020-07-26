@@ -1,8 +1,15 @@
-function chain = get_chain_from_urdf(model_name,urdf_path)
+function chain = get_chain_from_urdf(model_name,urdf_path,varargin)
 %
 % Here, we follow the parameters defined by Kajita et al. except we use multiple childs structure.
 % We separate joints from links by adapting this multiple childs structure.
 %
+
+% Parse options
+p = inputParser;
+addParameter(p,'CENTER_ROBOT',false); % redo loading
+parse(p,varargin{:});
+CENTER_ROBOT = p.Results.CENTER_ROBOT;
+
 % Parse URDF
 s = xml2struct(urdf_path);
 robot = s.robot;
@@ -164,5 +171,13 @@ chain.xyz_len = xyz_len;
 chain.rev_joint_idxs = zeros(length(chain.rev_joint_names),1);
 for i_idx = 1:length(chain.rev_joint_names)
     chain.rev_joint_idxs(i_idx) = idx_cell(chain.joint_names,chain.rev_joint_names{i_idx});
+end
+
+% Center the robot
+if CENTER_ROBOT
+    chain.joint(chain.joint(get_topmost_idx(chain)).childs).p_offset = [0,0,0]';
+    chain = update_chain_q(chain,...
+        chain.rev_joint_names,0*ones(1,chain.n_rev_joint)*pi/180);
+    chain = fk_chain(chain);
 end
 

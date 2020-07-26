@@ -13,7 +13,7 @@ if isfield(chain,'xyz_len')
 else
     max_len = 1.0;
 end
-def_r = max_len / 15;
+def_r = max_len / 20;
 p = inputParser;
 addParameter(p,'fig_idx',1);
 addParameter(p,'subfig_idx',1);
@@ -35,7 +35,7 @@ addParameter(p,'llw',2); % link line width
 addParameter(p,'lls','-'); % link line style
 addParameter(p,'PLOT_ROTATE_AXIS',1);
 addParameter(p,'ral',def_r); % rotate axis length
-addParameter(p,'rac','b'); % rotate axis color
+addParameter(p,'rac',''); % rotate axis color
 addParameter(p,'raa',0.5); % rotate axis alpha
 addParameter(p,'rasw',def_r/10); % rotate axis stem width
 addParameter(p,'ratw',def_r/5); % rotate axis tip width
@@ -242,9 +242,22 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
                     axis_i = R*a;
                     p1 = p;
                     p2 = p+axis_i*ral;
-                    fv = get_arrow_3d(p1,p2,'color',rac,'stemWidth',rasw,'tipWidth',ratw,...
+                    if isempty(rac)
+                        [~,max_idx] = max(a');
+                        switch max_idx
+                            case 1
+                                rac_i = 'r';
+                            case 2
+                                rac_i = 'g';
+                            case 3
+                                rac_i = 'b';
+                        end
+                    else
+                        rac_i = rac;
+                    end
+                    fv = get_arrow_3d(p1,p2,'color',rac_i,'stemWidth',rasw,'tipWidth',ratw,...
                         'facealpha',raa);
-                    h{fig_idx,subfig_idx}.arrow{i_idx} = patch(fv,'facecolor',rac,'edgeColor','none',...
+                    h{fig_idx,subfig_idx}.arrow{i_idx} = patch(fv,'facecolor',rac_i,'edgeColor','none',...
                         'FaceAlpha',raa,'FaceLighting','gouraud');
                 end
             end

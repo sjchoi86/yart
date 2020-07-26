@@ -13,7 +13,7 @@ switch lower(chain.name)
     case 'atlas'
         joi_types = {'rh','re','rs','lh','le','ls',... % hand, elbow, shoulder
             'root','rp','rk','ra','lp','lk','la','head'}; % root (pelvis), knee, ankle, head
-        joi_idxs = [27,21,24,13,7,10,...
+        joi_idxs = [25,21,24,11,7,10,...
             3,30,33,29,16,19,14,20];
     case 'baxter'
         joi_types = {'rh','re','rs','lh','le','ls','head','root'}; % hand, elbow, shoulder, head
@@ -45,11 +45,11 @@ switch lower(chain.name)
         joi_types = {'rh','re','rs','lh','le','ls','head','root'}; % hand, elbow, shoulder, head
         joi_idxs = [31,29,27,25,23,21,3,19];
     case 'panda'
-        joi_types = {'root','ee'}; 
-        joi_idxs = [2,10];
+        joi_types = {'root','ee','rh','lh'}; 
+        joi_idxs = [2,10,10,10];
     case 'sawyer'
-        joi_types = {'root','ef'}; 
-        joi_idxs = [2,18];
+        joi_types = {'root','ee','rh','lh'}; 
+        joi_idxs = [2,18,18,18];
     case 'theo'
         joi_types = {'rh','re','rs','lh','le','ls',... 
             'root','head'}; 
