@@ -3,7 +3,7 @@ ccc
 ccc
 
 % Configuration
-ANIMATE = 0;
+ANIMATE = 1;
 
 % Get the Robot Model
 model_name = 'coman'; % atlas / baxter / coman / panda / sawyer
