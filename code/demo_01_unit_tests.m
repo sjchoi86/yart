@@ -884,7 +884,7 @@ for i_idx = 1:n_unique % for mocaps with unique action names
     fprintf('[%d/%d] [%s]-[%s] description:[%s].\n bvh_path:[%s].\n',...
         i_idx,n_unique,m.subject,m.action,action_str,bvh_path);
     
-    ANIMATE = 1;
+    ANIMATE = 0;
     if ANIMATE
         % Get skeleton and kinematic chains
         [skeleton,time] = load_raw_bvh(bvh_path);
