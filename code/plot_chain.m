@@ -55,6 +55,12 @@ addParameter(p,'LOCATE_JOINT_NAME_AT_ROTATE_AXIS',0);
 addParameter(p,'jnfs',15); % joint name font size
 addParameter(p,'jnfn','consolas'); % joint name font name
 addParameter(p,'jnfc','k'); % joint name font color
+
+addParameter(p,'PLOT_CAPSULE',0); % plot link capsule
+addParameter(p,'cfc',0.5*[1,1,1]); % capsule face color
+addParameter(p,'cfa',0.4); % capsule face alpha
+addParameter(p,'cec','none'); % capsule edge color
+
 addParameter(p,'title_str',chain.name);
 addParameter(p,'tfs',20); % title font size
 addParameter(p,'tfn','consolas'); % title font name
@@ -101,6 +107,12 @@ LOCATE_JOINT_NAME_AT_ROTATE_AXIS = p.Results.LOCATE_JOINT_NAME_AT_ROTATE_AXIS;
 jnfs = p.Results.jnfs;
 jnfn = p.Results.jnfn;
 jnfc = p.Results.jnfc;
+
+PLOT_CAPSULE = p.Results.PLOT_CAPSULE;
+cfc = p.Results.cfc;
+cfa = p.Results.cfa;
+cec = p.Results.cec;
+
 title_str = p.Results.title_str;
 tfs = p.Results.tfs;
 tfn = p.Results.tfn;
@@ -223,7 +235,7 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
                 p1 = joint_fr.p;
                 p2 = joint_i.p;
                 h{fig_idx,subfig_idx}.line{i_idx} = plot3([p1(1),p2(1)],[p1(2),p2(2)],[p1(3),p2(3)],...
-                    llc,'LineWidth',llw,'LineStyle',lls);
+                    'Color',llc,'LineWidth',llw,'LineStyle',lls);
             end
         end
     end
@@ -328,9 +340,35 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
         end
     end
     
+    % Plot Capsule
+    if PLOT_CAPSULE
+        for i_idx = 1:chain.n_link
+            link_i = chain.link(i_idx);
+            if ~isempty(link_i.capsule)
+                cap = link_i.capsule;
+                
+                joint_idx = link_i.joint_idx;
+                p_link = chain.joint(joint_idx).p;
+                R_link = chain.joint(joint_idx).R;
+                
+                
+                h{fig_idx,subfig_idx}.cap_patch{i_idx} = ...
+                    patch('faces',cap.faces,'vertices',cap.vertices,...
+                    'FaceColor', cfc, 'EdgeColor', cec,'EdgeAlpha',0.3,... % EdgeColor 'k' / 'none'
+                    'FaceLighting','gouraud','AmbientStrength', 0.5, 'FaceAlpha', cfa);
+                h{fig_idx,subfig_idx}.cap_patch_t{i_idx} = hgtransform;
+                set(h{fig_idx,subfig_idx}.cap_patch{i_idx},...
+                    'parent',h{fig_idx,subfig_idx}.cap_patch_t{i_idx});
+                tform = pr2t(p_link,R_link);
+                set(h{fig_idx,subfig_idx}.cap_patch_t{i_idx},'Matrix',tform);
+            end
+        end
+    end
+    
     % Plot title
     if ~isempty(title_str)
-        h{fig_idx,subfig_idx}.title = title(title_str,'fontsize',tfs,'fontname',tfn);
+        h{fig_idx,subfig_idx}.title = title(...
+            title_str,'fontsize',tfs,'fontname',tfn,'interpreter','none');
     end
     
     % Not the first anymore 
@@ -479,6 +517,23 @@ else
             end
         end
     end
+    
+    % Plot Capsule
+    if PLOT_CAPSULE
+        for i_idx = 1:chain.n_link
+            link_i = chain.link(i_idx);
+            if ~isempty(link_i.capsule)
+                
+                joint_idx = link_i.joint_idx;
+                p_link = chain.joint(joint_idx).p;
+                R_link = chain.joint(joint_idx).R;
+
+                tform = pr2t(p_link,R_link);
+                set(h{fig_idx,subfig_idx}.cap_patch_t{i_idx},'Matrix',tform);
+            end
+        end
+    end
+    
     
     % Plot title
     if ~isempty(title_str)

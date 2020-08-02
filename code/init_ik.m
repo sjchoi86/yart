@@ -31,6 +31,7 @@ for i_idx = 1:length(joint_names_control)
 end
 ik.n_joint_control = length(ik.joint_names_control);
 ik.tick = 0;
+ik.tick_dec = 0;
 ik.err = inf;
 ik.err_prev = 0;
 ik.err_diff = 0;

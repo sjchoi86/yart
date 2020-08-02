@@ -24,7 +24,7 @@ switch mocap_subject
         joi_idxs = [1, 33, 32, 31, 24, 23, 22, ...
             9, 10, 11, 3, 4, 5, 19, 15, 16];
         joi_types = {'root','rh','re','rs','lh','le','ls',...
-            'rp','rk','ra','lp','lk','la','head','spine1','spine2'};
+            'rp','rk','ra','lp','lk','la','head','spine1','neck'};
     otherwise
         joi_idxs = [];
         joi_types = {};

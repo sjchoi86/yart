@@ -21,7 +21,7 @@ switch lower(chain.name)
     case 'coman'
         joi_types = {'rh','re','rs','lh','le','ls',... % hand, elbow, shoulder
             'root','rp','rk','ra','lp','lk','la'}; % root (pelvis), knee, ankle, head
-        joi_idxs = [48,38,35,44,42,39,...
+        joi_idxs = [48,38,36,44,42,40,...
             4,10,12,24,16,18,23];
     case 'darwin'
         joi_types = {'rh','re','rs','lh','le','ls',... % hand, elbow, shoulder

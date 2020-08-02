@@ -37,10 +37,11 @@ end
 % Step-size scheduling
 iclk = clock;
 ik.err_diff = ik.err_prev-ik.err;
-if ik.err_diff > 0 % if it gets better
+if ik.err_diff > 1e-4 % if it gets better
     ik.stepsize = ik.stepsize*ik.stepsize_inc_rate;
 else
     ik.stepsize = ik.stepsize*ik.stepsize_dec_rate;
+    ik.tick_dec = ik.tick_dec + 1; % tick for decrese
 end
 ik.stepsize = min(max(ik.stepsize,ik.stepsize_min),ik.stepsize_max);
 ik.err_prev = ik.err;

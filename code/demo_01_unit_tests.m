@@ -24,7 +24,16 @@ ccc
 % 20. Convex Optimization with CVX (http://cvxr.com/cvx/download/)
 % 21. Load CMU-MoCap DB and animate
 % 22. Show graph of MoCap skeleton
-%
+% 23. Localty Sensitive Hashing (LSH)
+% 24. Bayesian Optimization with Coordinate Descent
+% 25. Select subset indices from an unordered set
+% 26. Shortest path in an unweighted graph (BFS)
+% 27. Voronoi optimistic optimization (VOO)
+% 28. MoCap Skeleton Link Length Modification
+% 29. Get the Robot Model with Bounding Capsules (and Caching)
+% 30. Get Random Pose of a Robot Model and check self-collision
+% 31. Get the Workspace of JOI of a robot
+% 32. Rotate 3D vector with Slerp
 %
 %% 1. Make figures with different positions
 ccc
@@ -35,7 +44,7 @@ for tick = 1:10 % animate ticks
         'title_str',sprintf('Figure 2 tick:[%d]',tick));
     set_fig_position(figure(3),'position',[0.4,0.6,0.2,0.35],'ADD_TOOLBAR',1,'view_info',[80,16],...
         'title_str',sprintf('Figure 3 tick:[%d]',tick));
-    drawnow;
+    drawnow limitrate;
 end
 
 %% 2. Plot Homogeneous Transformation Matrices
@@ -347,7 +356,7 @@ chain = get_chain_from_urdf(model_name,urdf_path);
 % Plot robot
 chain = update_chain_q(chain,chain.rev_joint_names,360*ones(1,chain.n_rev_joint)*D2R);
 chain = fk_chain(chain);
-fig = plot_chain(chain,'view_info',[88,4],'axis_info','',...
+plot_chain(chain,'view_info',[88,4],'axis_info','',...
     'PLOT_MESH',1,'PLOT_LINK',1,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,...
     'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
     'title_str',sprintf('[%s]',chain.name),...
@@ -1036,7 +1045,7 @@ while ~bocd_finished(bocd)
     cost_best = bocd.cost_best;
     % Plot
     fig = figure(1); clf; hold on;
-    set_fig_position(fig,'position',[0.1,0.5,0.3,0.4],'SET_DRAGZOOM',0); 
+    set_fig_position(fig,'position',[0.1,0.5,0.3,0.4],'SET_DRAGZOOM',0);
     set(gcf,'color','w'); colormap copper;
     title(sprintf('[%d/%d] %s curr:[%.2f] best:[%.2f]',...
         bocd.iter,bocd.max_iter,mode_str,cost_added,cost_best),...
@@ -1155,27 +1164,27 @@ cb = colorbar; cb.FontSize = 15; cb.FontName = 'consolas';
 set(h,'EdgeColor','none','FaceAlpha',0.3); set(gcf,'color','w');
 axis('on', 'image'); axis off; dragzoom;
 
-%% 27. MoCap Skeleton Link Length Modification
+%% 28. MoCap Skeleton Link Length Modification
 ccc
 
-% Select one MoCap file 
+% Select one MoCap file
 mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
 n_mocap = length(mocap_infos);
 fprintf('We have [%d] mocaps.\n',n_mocap);
-m = mocap_infos(999); % 
+m = mocap_infos(999); %
 bvh_path = m.full_path;  % bvh path
-[mocap_name,action_str] = get_cmu_mocap_name(m,'mocap_folder','../../cmu-mocap/'); 
+[mocap_name,action_str] = get_cmu_mocap_name(m,'mocap_folder','../../cmu-mocap/');
 fprintf('[[%s]-[%s] description:[%s][%s].\n bvh_path:[%s].\n',...
     m.subject,m.action,mocap_name, action_str,bvh_path);
 joi_mocap = get_joi_mocap(m.subject); % joints of interest of MoCap
 
 % Get skeleton and kinematic chains
 [skeleton,time] = load_raw_bvh(bvh_path);
-HZ = 30; 
+HZ = 30;
 chains_mocap = get_chain_from_skeleton(skeleton,time,...
     'USE_METER',1,'ROOT_AT_ORIGIN',1,'Z_UP',1,'HZ',HZ);
 L = min(length(chains_mocap),5*HZ); % max 5sec
-for tick = 1:L % for all tick 
+for tick = 1:L % for all tick
     chain_mocap = chains_mocap{tick};
     chain_mocap = upfront_chain(chain_mocap,joi_mocap); % upfront
     
@@ -1183,120 +1192,263 @@ for tick = 1:L % for all tick
     llm_vec = 1.0+rand(1,7);
     llm_stuct = struct('rh',llm_vec(1),'re',llm_vec(2),'rs',llm_vec(3),...
         'lh',llm_vec(4),'le',llm_vec(5),'ls',llm_vec(6),...
-        'spine1',llm_vec(7),'spine2',llm_vec(7));
+        'spine1',llm_vec(7),'neck',llm_vec(7));
     chain_mocap_llm = get_chain_mocap_llm(chain_mocap,joi_mocap,llm_stuct);
     
     % Plot the original MoCap skeleton
-    plot_chain(chain_mocap,... 
+    plot_chain(chain_mocap,...
         'fig_idx',1,'fig_pos',[0.0,0.6,0.3,0.4], ...
         'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.02,...
         'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.02,'jsfa',0.1,'PRINT_JOINT_NAME',0,...
         'title_str',sprintf('[%d/%d][%.2f]s [%s]',tick,L,tick/HZ,action_str),'tfs',16);
-    plot_joi_chain(chain_mocap,joi_mocap, ... 
+    plot_joi_chain(chain_mocap,joi_mocap, ...
         'fig_idx',1,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_mocap.n),...
         'PRINT_JOI_NAME',0);
     plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',1,'PLOT_SPHERE',0);
     
     % Plot the link length modified MoCap skeleton
-    plot_chain(chain_mocap_llm,... 
+    plot_chain(chain_mocap_llm,...
         'fig_idx',2,'fig_pos',[0.3,0.6,0.3,0.4], ...
         'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.02,...
         'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.02,'jsfa',0.1,'PRINT_JOINT_NAME',0,...
         'title_str',sprintf('[%d/%d][%.2f]s [%s]',tick,L,tick/HZ,action_str),'tfs',16);
-    plot_joi_chain(chain_mocap_llm,joi_mocap, ... 
+    plot_joi_chain(chain_mocap_llm,joi_mocap, ...
         'fig_idx',2,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_mocap.n),...
         'PRINT_JOI_NAME',0);
     plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',2,'PLOT_SPHERE',0);
-    drawnow;
+    drawnow limitrate;
 end
 
-%% 28. Motion Retargeting (on-going)
+%% 29. Get the Robot Model with Bounding Capsules (and Caching)
 ccc
 
-% Get the robot model
-model_name = 'atlas'; % atlas / baxter / coman / 
-urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
-chain_model = get_chain_from_urdf(model_name,urdf_path,'CENTER_ROBOT',1);
-chain_model = update_chain_q(chain_model,...
-    chain_model.rev_joint_names,0*ones(1,chain_model.n_rev_joint)*D2R);
-chain_model = fk_chain(chain_model); % FK 
-joi_model = get_joi_chain(chain_model);
+% Load the robot model
+model_name = 'coman'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
 
-% Get CMU MoCap DB
-mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
-n_mocap = length(mocap_infos);
-m = mocap_infos(999); 
-bvh_path = m.full_path;  % bvh path
-[mocap_name,action_str] = get_cmu_mocap_name(m,'mocap_folder','../../cmu-mocap/'); 
-fprintf('[[%s]-[%s] description:[%s].\n bvh_path:[%s].\n',...
-    m.subject,m.action,action_str,bvh_path);
-[skeleton,time] = load_raw_bvh(bvh_path);
-HZ = 30; 
-chains_mocap = get_chain_from_skeleton(skeleton,time,...
-    'USE_METER',1,'ROOT_AT_ORIGIN',1,'Z_UP',1,'HZ',HZ);
-joi_mocap = get_joi_mocap(m.subject);
-
-% Plot the robot model
+% Plot
 plot_chain(chain_model,...
     'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info','',...
-    'PLOT_MESH',1,'mfa',0.2,'PLOT_LINK',1,'PLOT_ROTATE_AXIS',1,'PLOT_JOINT_AXIS',1,...
-    'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
+    'PLOT_MESH',1,'mfa',0.4,'PLOT_LINK',1,...
+    'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
+    'PLOT_CAPSULE',1,...
     'title_str',sprintf('[%s]',chain_model.name),...
     'MULTIPLE_MONITOR',0,'monitor_idx',1);
-plot_joi_chain(chain_model,joi_model,...
-    'fig_idx',1,'subfig_idx',1,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_model.n));
-plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',1,'PLOT_SPHERE',0);
 
-% Get skeleton and kinematic chains
-L = min(length(chains_mocap),5*HZ); % max 5sec
-for tick = 1:L % for all tick 
-    chain_mocap = chains_mocap{tick};
-    chain_mocap = upfront_chain(chain_mocap,joi_mocap); % upfront
-    title_str = sprintf('[%d/%d][%.2f]s [%s]',tick,L,tick/HZ,action_str);
-    plot_chain(chain_mocap,...
-        'fig_idx',1,'subfig_idx',2,'fig_pos',[0.5,0.6,0.3,0.4],...
-        'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.02,...
-        'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.02,'jsfa',0.1,'PRINT_JOINT_NAME',0,...
-        'title_str',title_str,'tfs',25);
-    plot_joi_chain(chain_mocap,joi_mocap,...
-        'fig_idx',1,'subfig_idx',2,'sr',0.05,'sfa',0.5,'colors',linspecer(joi_mocap.n),...
-        'PRINT_JOI_NAME',0);
-    drawnow;
-end
-
-%% 29. Get Random Pose of a Robot Model
+%% 30. Get Random Pose of a Robot Model and check self-collision
 ccc
 
-% Robot 
-model_name = 'sawyer'; % atlas / baxter / coman / panda / sawyer
-urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
-chain_model = get_chain_from_urdf(model_name,urdf_path,'CENTER_ROBOT',1);
+% Load the robot model
+model_name = 'coman'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
 joi_model = get_joi_chain(chain_model);
 
 % Plot chain graph
-plot_chain_graph(chain_model);
+% plot_chain_graph(chain_model);
 
 % Get joint names to control from JOI types
 joi_types = {'rh','lh'};
 jnames_ctrl = get_jnames_ctrl_from_joi_types(...
     chain_model,joi_model,joi_types,'EXCLUDE_TARGET',1);
 
-% Sample Random Robot Pose and Plot
-chain_model = update_chain_q(chain_model,jnames_ctrl,360*rand(1,length(jnames_ctrl))*D2R);
-chain_model = fk_chain(chain_model);
+for cnt = 1:10
+    
+    % Sample Random Robot Pose and Plot
+    chain_model = update_chain_q(chain_model,jnames_ctrl,360*rand(1,length(jnames_ctrl))*D2R);
+    chain_model = fk_chain(chain_model);
+    [SC,sc_ij_list] = check_sc(chain_model); % check self-collision
+    
+    % Plot the Robot Model
+    ral = chain_model.xyz_len(3)/10; rasw = ral/10; ratw = ral/5;
+    plot_chain(chain_model,...
+        'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info','',...
+        'PLOT_MESH',1,'mfa',0.4,'PLOT_LINK',1,...
+        'PLOT_ROTATE_AXIS',0,'ral',ral,'rasw',rasw,'ratw',ratw,...
+        'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
+        'PLOT_CAPSULE',0,...
+        'title_str',sprintf('[%s] SC:[%d]',chain_model.name,SC),...
+        'MULTIPLE_MONITOR',0,'monitor_idx',1);
+    clen = chain_model.xyz_len(3)/20;
+    plot_joi_chain(chain_model,joi_model,'joi_types','','PLOT_COORD',1,'clen',clen);
+    plot_sc_capsules(chain_model,sc_ij_list,'cfa',0.3); % plot self-collided capsules
+    drawnow limitrate; pause;
+end
 
-% Plot the Robot Model
-ral = chain_model.xyz_len(3)/10; rasw = ral/10; ratw = ral/5;
-plot_chain(chain_model,...
-    'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info','',...
-    'PLOT_MESH',1,'mfa',0.4,'PLOT_LINK',1,...
-    'PLOT_ROTATE_AXIS',1,'ral',ral,'rasw',rasw,'ratw',ratw,...
-    'PLOT_JOINT_AXIS',1,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
-    'title_str',sprintf('[%s]',chain_model.name),...
-    'MULTIPLE_MONITOR',0,'monitor_idx',1);
+%% 31. Get the Workspace of JOI of a robot
+ccc
+
+% Load the robot model
+model_name = 'sawyer'; % atlas / baxter / coman / panda / sawyer
+ws_joi_types = {'ee'}; % {'rh','re','lh','le'} / {'ee'}
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
+joi_model = get_joi_chain(chain_model);
+
+% Get the workspaces of the robot model
+ws = get_ws_with_cache(chain_model,joi_model,'ws_joi_types',ws_joi_types,...
+    'RE',0,'cache_folder','../cache','PLOT_EACH',1,'PLOT_FINAL',1);
+for i_idx = 1:length(ws.joi_types)
+    joi_type_i = ws.joi_types{i_idx};
+    ws_info_i = ws.info{i_idx};
+    fprintf('[%d][%s] min:%s max:%s len:%s.\n',i_idx,joi_type_i,...
+        vec2str(ws_info_i.min_vals),vec2str(ws_info_i.max_vals),vec2str(ws_info_i.len_vals));
+end
+
+%% 32. Rotate 3D vector with Slerp
+ccc
+
+% Get the random vector
+rvec = randn(3,1); rvec = 0.99*rvec/norm(rvec);
+arrow_color = 0.5*[1,1,1];
+res = 10; % resolution
+
+% Plot
+set_fig_position(figure(1),'position',[0.0,0.5,0.4,0.5],'ADD_TOOLBAR',1,'AXES_LABEL',1,...
+    'view_info',[80,16],'axis_info',[-1,+1,-1,+1,-1,+1],'SET_DRAGZOOM',1,'GRID_ON',1);
+plot_T(p2t(zeros(3,1)),'PLOT_SPHERE',0,'alw',3);
+plot_arrow_3d(zeros(3,1),rvec,'subfig_idx',1,'color',arrow_color);
+dir_vec = [1,0,0]'; dir_col = [1,0,0];
+for r_idx = 1:res
+    rotate_rate = r_idx/res;
+    v_out = rotate_vec(rvec,dir_vec,rotate_rate);
+    plot_arrow_3d(zeros(3,1),v_out,'subfig_idx',1+r_idx,...
+        'color',rotate_rate*dir_col+(1-rotate_rate)*arrow_color);
+end
+dir_vec = [0,1,0]'; dir_col = [0,1,0];
+for r_idx = 1:res
+    rotate_rate = r_idx/res;
+    v_out = rotate_vec(rvec,dir_vec,rotate_rate);
+    plot_arrow_3d(zeros(3,1),v_out,'subfig_idx',1+res+r_idx,...
+        'color',rotate_rate*dir_col+(1-rotate_rate)*arrow_color);
+end
+dir_vec = [0,0,1]'; dir_col = [0,0,1];
+for r_idx = 1:res
+    rotate_rate = r_idx/res;
+    v_out = rotate_vec(rvec,dir_vec,rotate_rate);
+    plot_arrow_3d(zeros(3,1),v_out,'subfig_idx',1+2*res+r_idx,...
+        'color',rotate_rate*dir_col+(1-rotate_rate)*arrow_color);
+end
+
+%% 33. Motion Retargeting Parametrization
+%
+% Currently, it has 8 optimization variables
+% - 4 for atease_rate
+% - 4 for lengthen_rate
+%
+ccc
+
+% Get the Robot Model
+model_name = 'coman'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
+chain_model_sz = get_chain_sz(chain_model);
+joi_model = get_joi_chain(chain_model);
+ws = get_ws_with_cache(chain_model,joi_model,'ws_joi_types',{'rh','re','lh','le'},...
+    'RE',0,'cache_folder','../cache','PLOT_EACH',0,'PLOT_FINAL',0);
+joi_types = {'rh','lh'};
+jnames_ctrl = get_jnames_ctrl_from_joi_types(chain_model,joi_model,joi_types,'EXCLUDE_TARGET',1);
+n_ctrl = length(jnames_ctrl);
+fprintf('[%s] n_ctrl:[%d].\n',model_name,n_ctrl);
+
+% Get the MoCap Skeleton
+mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
+m = mocap_infos(randi([1,length(mocap_infos)])); % random mocap
+bvh_path = m.full_path;  % bvh path
+[~,action_str] = get_cmu_mocap_name(m,'mocap_folder','../../cmu-mocap/');
+fprintf('[%s]-[%s] description:[%s].\n',m.subject,m.action,action_str);
+[skeleton,time] = load_raw_bvh(bvh_path);
+chains_mocap = get_chain_from_skeleton(skeleton,time,...
+    'USE_METER',1,'ROOT_AT_ORIGIN',1,'Z_UP',1,'HZ',30);
+L = length(chains_mocap);
+joi_mocap = get_joi_mocap(m.subject);
+
+% Loop
+q_traj = zeros(L-1,n_ctrl);
+for tick = 2:L
+    
+    % tick = 2; % tick
+    chain_mocap = chains_mocap{tick};
+    chain_mocap = upfront_chain(chain_mocap,joi_mocap); % upfront mocap skeleton
+    
+    % Get JOI Positions of MoCap (pm: position of mocap)
+    [pm_root,pm_rs,pm_re,pm_rh,pm_ls,pm_le,pm_lh,pm_neck] = ...
+        get_different_p_joi_mocap(chain_mocap,joi_mocap);
+    
+    % Get lengthen rates of MoCap skeleton to match the robot morphology
+    [r2n_rate,n2s_rate,s2e_rate,e2h_rate] = ...
+        get_mocap_lengthen_rates(chain_model,joi_model,chain_mocap,joi_mocap);
+    
+    % Get Modified JOI Positions for Motion Retargeting (mr: motion retargeting)
+    mr_vec = [0.5,0.0,0.0,0.0,r2n_rate,n2s_rate,s2e_rate,e2h_rate]; % rule-based MR
+    [pm_neck_mr,pm_rs_mr,pm_re_mr,pm_rh_mr,pm_ls_mr,pm_le_mr,pm_lh_mr] = ...
+        get_p_joi_motion_retarget(pm_root,pm_rs,pm_re,pm_rh,pm_ls,pm_le,pm_lh,pm_neck,mr_vec);
+    
+    % Run IK
+    ik = init_ik(chain_model,'joint_names_control',jnames_ctrl);
+    ik = add_ik(ik,'joint_name',get_joint_name_from_joi_type(chain_model,joi_model,'rh'),...
+        'p',pm_rh_mr,'IK_P',1);
+    ik = add_ik(ik,'joint_name',get_joint_name_from_joi_type(chain_model,joi_model,'re'),...
+        'p',pm_re_mr,'IK_P',1);
+    ik = add_ik(ik,'joint_name',get_joint_name_from_joi_type(chain_model,joi_model,'rs'),...
+        'p',pm_rs_mr,'IK_P',1);
+    ik = add_ik(ik,'joint_name',get_joint_name_from_joi_type(chain_model,joi_model,'lh'),...
+        'p',pm_lh_mr,'IK_P',1);
+    ik = add_ik(ik,'joint_name',get_joint_name_from_joi_type(chain_model,joi_model,'le'),...
+        'p',pm_le_mr,'IK_P',1);
+    ik = add_ik(ik,'joint_name',get_joint_name_from_joi_type(chain_model,joi_model,'ls'),...
+        'p',pm_ls_mr,'IK_P',1);
+    q = (ik.joint_limits_lower+ik.joint_limits_upper)/2; % median pose
+    chain_model = update_chain_q(chain_model,ik.joint_names_control,q);
+    chain_model = fk_chain(chain_model); % initialize chain
+    while (ik.tick < 100) % loop until 500 ticks
+        [ik,chain_model,q] = onestep_ik(ik,chain_model,q);
+        [FLAG,ik,best_err] = check_ik_oscilating(ik); % check limbo
+        if FLAG
+            break;
+        end
+    end
+    q_traj(tick-1,:) = q'; % append
+    chain_model = update_chain_q(chain_model,ik.joint_names_control,q);
+    chain_model = fk_chain(chain_model); % initialize chain
+    
+    % Get JOI Positions of the Robot (pr: position of robot)
+    [pr_root,pr_rs,pr_re,pr_rh,pr_ls,pr_le,pr_lh,pr_neck] = ...
+        get_different_p_joi_robot_model(chain_model,joi_model);
+
+    % Plot the robot model
+    title_str = sprintf('[%d/%d] [%s]-[%s]',tick,L,model_name,action_str);
+    axis_info = [-inf,inf,-1.1,1.1,chain_model_sz.xyz_min(3),1.1];
+    plot_chain(chain_model,'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info',axis_info,...
+        'PLOT_MESH',1,'mfa',0.1,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,...
+        'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,'PLOT_CAPSULE',0,...
+        'title_str',title_str,'tfs',25);
+    plot_cubes(repmat({p2t([0,0,0]')},1,4),...
+        {ws.info{1}.min_vals,ws.info{2}.min_vals,ws.info{3}.min_vals,ws.info{4}.min_vals},...
+        {ws.info{1}.len_vals,ws.info{2}.len_vals,ws.info{3}.len_vals,ws.info{4}.len_vals},...
+        'colors',linspecer(4),'alpha',0.1);
+    % Plot the JOI of the robot model
+    joi_colors = linspecer(8); joi_sr = 0.02;
+    plot_spheres([pr_rs,pr_re,pr_rh,pr_ls,pr_le,pr_lh,pr_neck]','subfig_idx',1,...
+        'sr',joi_sr,'colors',joi_colors(2:end,:),'sfa',0.8);
+    % Plot the Original MoCap Skeleton
+    plot_chain(chain_mocap,'fig_idx',1,'subfig_idx',2,...
+        'PLOT_LINK',1,'llc',[0.3,0.3,1.0],'llw',2,...
+        'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0);
+    % Plot the JOI of the Original MoCap Skeleton
+    % plot_T(p2t(pm_root),'subfig_idx',1,'PLOT_AXIS',1,'PLOT_SPHERE',0);
+    plot_spheres([pm_rs,pm_re,pm_rh,pm_ls,pm_le,pm_lh,pm_neck]','subfig_idx',2,...
+        'sr',joi_sr,'colors',joi_colors(2:end,:),'sfa',0.2);
+    % Plot the JOI of the modified MoCap Skeleton
+    plot_spheres([pm_rs_mr,pm_re_mr,pm_rh_mr,pm_ls_mr,pm_le_mr,pm_lh_mr,pm_neck_mr]','subfig_idx',3,...
+        'sr',joi_sr,'colors',joi_colors(2:end,:),'sfa',0.8);
+    plot_lines([pm_root,pm_neck_mr,pm_rs_mr,pm_re_mr,pm_neck_mr,pm_ls_mr,pm_le_mr]',...
+        [pm_neck_mr,pm_rs_mr,pm_re_mr,pm_rh_mr,pm_ls_mr,pm_le_mr,pm_lh_mr]',...
+        'subfig_idx',1,'color','k','lw',3);
+    drawnow;
+    
+end
+
 
 %%
-
-
-
-

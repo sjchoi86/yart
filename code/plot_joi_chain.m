@@ -18,8 +18,9 @@ addParameter(p,'clen',max(chain_sz.xyz_len)/25);
 addParameter(p,'clw',4);
 addParameter(p,'sr',max(chain_sz.xyz_len)/25);
 addParameter(p,'sfc','k');
-addParameter(p,'sfa',0.2);
+addParameter(p,'sfa',0.5);
 addParameter(p,'colors','');
+addParameter(p,'joi_types','');
 parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;
@@ -29,22 +30,39 @@ sr_rate = p.Results.sr_rate;
 PLOT_SPHERE = p.Results.PLOT_SPHERE;
 PRINT_JOI_NAME = p.Results.PRINT_JOI_NAME;
 tfs = p.Results.tfs;
-clen = p.Results.clen;
+clen = p.Results.clen; % coordinate length
 clw = p.Results.clw;
 sr = p.Results.sr;
 sfc = p.Results.sfc;
 sfa = p.Results.sfa;
 colors = p.Results.colors;
+joi_types = p.Results.joi_types;
 
 
 if h{fig_idx,subfig_idx}.first_flag || ...% first flag
         ~ishandle(h{fig_idx,subfig_idx}.fig)
     h{fig_idx,subfig_idx}.first_flag = false;
+    
+    % Get JOI indices
+    if isempty(joi_types)
+        joi_idxs = 1:joi_chain.n;
+    else
+        n = length(joi_types);
+        joi_idxs = zeros(1,n);
+        for i_idx = 1:n
+            joi_idxs(i_idx) = idx_cell(joi_chain.types,joi_types{i_idx});
+        end
+        joi_idxs = unique(joi_idxs);
+    end
+    h{fig_idx,subfig_idx}.joi_idxs = joi_idxs;
+    
+    
     % Plot the model
     h{fig_idx,subfig_idx}.fig = figure(fig_idx);
     hold on;
     
-    for i_idx = 1:joi_chain.n % for each points
+    for i_idx = h{fig_idx,subfig_idx}.joi_idxs % for each JOI
+        
         % Get p and R
         p = chain.joint(joi_chain.idxs(i_idx)).p;
         R = chain.joint(joi_chain.idxs(i_idx)).R;
@@ -125,7 +143,8 @@ if h{fig_idx,subfig_idx}.first_flag || ...% first flag
     
 else
     
-    for i_idx = 1:joi_chain.n % for each points
+    for i_idx = h{fig_idx,subfig_idx}.joi_idxs % for each JOI
+        
         % Get p and R
         p = chain.joint(joi_chain.idxs(i_idx)).p;
         R = chain.joint(joi_chain.idxs(i_idx)).R;

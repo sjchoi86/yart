@@ -1,4 +1,4 @@
-function plot_cube(T,xyz_min,xyz_len,varargin)
+function handler = plot_cube(T,xyz_min,xyz_len,varargin)
 %
 % Plot cube
 %
@@ -37,6 +37,7 @@ if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     h{fig_idx,subfig_idx}.fig = figure(fig_idx);
     
     % Plot cube
+    h{fig_idx,subfig_idx}.vertex_matrix = vertex_matrix;
     h{fig_idx,subfig_idx}.patch = patch('Vertices',vertex_matrix,...
         'Faces',faces_matrix,...
         'FaceColor',color,'FaceAlpha',alpha,...
@@ -45,7 +46,20 @@ if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     set(h{fig_idx,subfig_idx}.patch,'parent',h{fig_idx,subfig_idx}.patch_t);
     tform = pr2t(p,R);
     set(h{fig_idx,subfig_idx}.patch_t,'Matrix',tform);
+    
 else
+    if ~isequal(h{fig_idx,subfig_idx}.vertex_matrix,vertex_matrix)
+        h{fig_idx,subfig_idx}.vertex_matrix = vertex_matrix;
+        delete(h{fig_idx,subfig_idx}.patch);
+        h{fig_idx,subfig_idx}.patch = patch('Vertices',vertex_matrix,...
+            'Faces',faces_matrix,...
+            'FaceColor',color,'FaceAlpha',alpha,...
+            'EdgeColor',edge_color,'lineWidth',lw); % 'EdgeColor','none');
+        h{fig_idx,subfig_idx}.patch_t = hgtransform;
+        set(h{fig_idx,subfig_idx}.patch,'parent',h{fig_idx,subfig_idx}.patch_t);
+    end
     tform = pr2t(p,R);
     set(h{fig_idx,subfig_idx}.patch_t,'Matrix',tform);
 end
+
+handler = h{fig_idx,subfig_idx}.patch;
