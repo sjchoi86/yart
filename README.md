@@ -85,6 +85,19 @@ end
 ```
 It supports joint position limit handling by excluding the next possible violating joints. We tried soft-barrier-based methods but this simple heuristics work bettern in practice, at least in our cases. Handling self-collision will soon be implemented. 
 
+### To use CMU-mocap
+`git clone https://github.com/una-dinosauria/cmu-mocap.git` 
+the CMU mocap DB in a bvh format `outside` the `yart` folder. 
+```
+├── ...
+├── project                 # Project folder 
+│   ├── yart                # folder containing the current YART project 
+│   ├── cmu-mocap           # folder containing CMU mocaps
+│   └── ...                 # etc.
+└── ...
+```
+
+
 ### Interactive inverse kinematics
 
 [![](http://img.youtube.com/vi/zHNi532F1-c/0.jpg)](http://www.youtube.com/watch?v=zHNi532F1-c "")
@@ -94,13 +107,8 @@ It supports joint position limit handling by excluding the next possible violati
 [![](http://img.youtube.com/vi/klvGY-akl58/0.jpg)](http://www.youtube.com/watch?v=klvGY-akl58 "")
 
 ### TODO List:
-- Handling motion capture data in `.bvh` formats. 
-- Some basic machine learning methods such as Gaussian Processes and Bayesian Optimization.
 - Mobile robotics and path planning methods such as rapidly exploring random trees (RRT) and vector field histogram (VFH).
 - Model predictive control (MPC) 
 - Trajectory optimization 
 
-More information can be found in the following link:
-https://sites.google.com/view/sungjoon-choi/yart.
-
-Contact: Sungjoon Choi (sungjoon.s.choi@gmail.com)
+Contact: Sungjoon Choi (sungjoon-choi@korea.ac.kr)
