@@ -38,11 +38,11 @@ ccc
 %% 1. Make figures with different positions
 ccc
 for tick = 1:10 % animate ticks
-    set_fig_position(figure(1),'position',[0.0,0.6,0.2,0.35],'ADD_TOOLBAR',1,'view_info',[80,16],...
+    set_fig_position(figure(1),'position',[0.0,0.6,0.2,0.35],'ADD_TOOLBAR',0,'view_info',[80,16],...
         'title_str',sprintf('Figure 1 tick:[%d]',tick));
-    set_fig_position(figure(2),'position',[0.2,0.6,0.2,0.35],'ADD_TOOLBAR',1,'view_info',[80,16],...
+    set_fig_position(figure(2),'position',[0.2,0.6,0.2,0.35],'ADD_TOOLBAR',0,'view_info',[80,16],...
         'title_str',sprintf('Figure 2 tick:[%d]',tick));
-    set_fig_position(figure(3),'position',[0.4,0.6,0.2,0.35],'ADD_TOOLBAR',1,'view_info',[80,16],...
+    set_fig_position(figure(3),'position',[0.4,0.6,0.2,0.35],'ADD_TOOLBAR',0,'view_info',[80,16],...
         'title_str',sprintf('Figure 3 tick:[%d]',tick));
     drawnow limitrate;
 end
@@ -461,7 +461,7 @@ end
 ccc
 
 % Get the kinematic chain of the model
-model_name = 'sawyer'; % coman / panda / sawyer
+model_name = 'coman'; % coman / panda / sawyer
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
 chain = get_chain_from_urdf(model_name,urdf_path);
 
@@ -884,7 +884,7 @@ for i_idx = 1:n_unique % for mocaps with unique action names
     fprintf('[%d/%d] [%s]-[%s] description:[%s].\n bvh_path:[%s].\n',...
         i_idx,n_unique,m.subject,m.action,action_str,bvh_path);
     
-    ANIMATE = 0;
+    ANIMATE = 1;
     if ANIMATE
         % Get skeleton and kinematic chains
         [skeleton,time] = load_raw_bvh(bvh_path);
@@ -1280,8 +1280,8 @@ end
 ccc
 
 % Load the robot model
-model_name = 'sawyer'; % atlas / baxter / coman / panda / sawyer
-ws_joi_types = {'ee'}; % {'rh','re','lh','le'} / {'ee'}
+model_name = 'baxter'; % atlas / baxter / coman / panda / sawyer
+ws_joi_types = {'rh','lh'}; % {'rh','re','lh','le'} / {'ee'}
 chain_model = get_chain_model_with_cache(model_name,...
     'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
 joi_model = get_joi_chain(chain_model);
@@ -1456,16 +1456,18 @@ ccc
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
 chain_model = get_chain_model_with_cache(model_name,...
     'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
-T = 0.01; HZ = round(1/T); L = 1000;
+T = 0.01; chain_model.dt = T; % set time step
+HZ = round(1/T); L = 1000;
 com_traj = nan*ones(HZ,3); zmp_traj = nan*ones(HZ,3); % remain 1sec
 
 for tick = 1:L % for each tick
     
     % Update model, dynamics and ZMP
-    sec = tick * T; w = 2*pi*T*0.3;
+    sec = tick * T; w = 5*pi/L;
     chain_model = update_chain_q(chain_model,{'joint1','joint2','joint3'},...
-        [90*sin(w*tick),90*sin(w*tick),0*sin(w*tick)]);
-    chain_model = fk_chain(chain_model); % initialize chain
+        [90*D2R*cos(w*tick),90*D2R*cos(w*tick),0*D2R*cos(w*tick)]);
+    chain_model = fk_chain(chain_model); % forward kinematics
+    chain_model = fv_chain(chain_model); % forward velocities
     q_rad = get_q_chain(chain_model,chain_model.joint_names)';
     if tick == 1, q_rad_diff = zeros(size(q_rad));
     else, q_rad_diff = q_rad - q_rad_prev;
@@ -1473,9 +1475,49 @@ for tick = 1:L % for each tick
     q_rad_prev = q_rad;
     
     % Update forward dynamic properties
+    joints = chain_model.rev_joint_names;
+    chain_model = update_chain_dynamics(chain_model,joints,q_rad_diff,T);
+    if tick <= 2, dP = zeros(size(chain_model.P)); dL = zeros(size(chain_model.L));
+    else % Compute numerical difference of P and L
+        dP = (chain_model.P - model_P_prev)/T; dL = (chain_model.L - model_L_prev)/T;
+    end
+    model_P_prev = chain_model.P; model_L_prev = chain_model.L;
+    zmp_z = chain_model.xyz_min(3);
+    zmp = calc_model_zmp(chain_model,dP,dL,zmp_z); % compute ZMP
+    com_proj = chain_model.com; com_proj(3) = zmp(3); % COM projected on the ground
     
-    
-    
+    % Plot robot model and ZMP and COM projected on the ground
+    com_traj(1:end-1) = com_traj(2:end); com_traj(end,:) = com_proj;
+    zmp_traj(1:end-1) = zmp_traj(2:end); zmp_traj(end,:) = zmp;
+    title_str = sprintf('[%d/%d]',tick,L);
+    axis_info = [-1.0,+1.0,-1.0,+1.0,+0.0,+2.0];
+    plot_chain(chain_model,'axis_info',axis_info,...
+        'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
+        'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.05,'w_rate',0.03,...
+        'title_str',title_str,'view_info',[88,17]);
+    sr = chain_model.xyz_len(3)/30;
+    [~,~,h_zmp] = plot_T(pr2t(zmp,eye(3,3)),'subfig_idx',1,'PLOT_AXIS',0,...
+        'PLOT_SPHERE',1,'sr',sr,'sfc','r','sfa',0.8);
+    [~,~,h_com] = plot_T(pr2t(com_proj,eye(3,3)),'subfig_idx',2,'PLOT_AXIS',0,...
+        'PLOT_SPHERE',1,'sr',sr,'sfc','b','sfa',0.8);
+    if tick == 1
+        h_zmp_traj = plot3(zmp_traj(:,1),zmp_traj(:,2),zmp_traj(:,3),'-',...
+            'color','r','linewidth',3);
+        h_com_traj = plot3(com_traj(:,1),com_traj(:,2),com_traj(:,3),'-',...
+            'color','b','linewidth',3);
+    else
+        h_zmp_traj.XData = zmp_traj(:,1);
+        h_zmp_traj.YData = zmp_traj(:,2);
+        h_zmp_traj.ZData = zmp_traj(:,3);
+        h_com_traj.XData = com_traj(:,1);
+        h_com_traj.YData = com_traj(:,2);
+        h_com_traj.ZData = com_traj(:,3);
+    end
+    if tick == 1
+        h_leg = legend([h_zmp,h_com],{'ZMP','COM'},...
+            'fontsize',25,'location','southeast','fontname','Consolas');
+    end
+    drawnow limitrate; 
     
     
 end

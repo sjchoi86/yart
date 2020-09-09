@@ -10,7 +10,6 @@ idx_fr = chain.joint(idx_to).parent;
 if ~isempty(idx_fr)
     joint_fr = chain.joint(idx_fr);
     joint_to = chain.joint(idx_to);
-    
     chain.joint(idx_to).v = joint_fr.v + cross(joint_fr.w,joint_fr.R*joint_to.p_offset);
     chain.joint(idx_to).w = joint_fr.w + joint_fr.R*(joint_to.a * (joint_to.q_diff/chain.dt) );
 end

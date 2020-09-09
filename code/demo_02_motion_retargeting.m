@@ -87,7 +87,7 @@ end % for i_idx = 1:length(model_names) % for all robot models
 ccc
 
 % Get the Robot Model
-model_name = 'atlas'; % atlas / baxter / coman
+model_name = 'baxter'; % atlas / baxter / coman
 [chain_model,chain_model_sz,joi_model,ws,jnames_ctrl] = ...
     get_robot_model_information_for_motion_retargeting(model_name);
 

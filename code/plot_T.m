@@ -1,4 +1,4 @@
-function plot_T(T,varargin)
+function [fig,h_coord,h_sphere] = plot_T(T,varargin)
 %
 % Plot Homogeneous Transformation Matrix
 %
@@ -169,6 +169,18 @@ else
         h{fig_idx,subfig_idx}.text.String = [' ',text_str];
     end
     
+end
+
+fig = h{fig_idx,subfig_idx}.fig;
+if PLOT_AXIS
+    h_coord = h{fig_idx,subfig_idx}.cx;
+else
+    h_coord = '';
+end
+if PLOT_SPHERE
+    h_sphere= h{fig_idx,subfig_idx}.sphere;
+else
+    h_sphere = '';   
 end
 
 
