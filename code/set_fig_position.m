@@ -23,6 +23,10 @@ addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors cas
 addParameter(p,'SET_BG_WHITE',1);
 addParameter(p,'title_str','');
 addParameter(p,'title_fs',20);
+
+addParameter(p,'xm','');
+addParameter(p,'ym','');
+
 parse(p,varargin{:});
 position = p.Results.position;
 ADD_TOOLBAR = p.Results.ADD_TOOLBAR;
@@ -37,6 +41,9 @@ monitor_idx = p.Results.monitor_idx;
 SET_BG_WHITE = p.Results.SET_BG_WHITE;
 title_str = p.Results.title_str;
 title_fs = p.Results.title_fs;
+
+xm = p.Results.xm;
+ym = p.Results.ym;
 
 
 if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
@@ -56,6 +63,10 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
         % Set the position of a figure relative to the screen size
         fig_pos = [position(1)*sz(3),position(2)*sz(4),position(3)*sz(3),position(4)*sz(4)];
         set(fig,'Position',fig_pos);
+    end
+    
+    if ~isempty(xm) && ~isempty(ym)
+        subaxes(fig,1,1,1,xm,ym);
     end
     
     

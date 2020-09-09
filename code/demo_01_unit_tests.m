@@ -1450,5 +1450,82 @@ for tick = 2:L
     
 end
 
+%% 34. Compute ZMP
+ccc
+% Load model 
+model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
+T = 0.01; HZ = round(1/T); L = 1000;
+com_traj = nan*ones(HZ,3); zmp_traj = nan*ones(HZ,3); % remain 1sec
+
+for tick = 1:L % for each tick
+    
+    % Update model, dynamics and ZMP
+    sec = tick * T; w = 2*pi*T*0.3;
+    chain_model = update_chain_q(chain_model,{'joint1','joint2','joint3'},...
+        [90*sin(w*tick),90*sin(w*tick),0*sin(w*tick)]);
+    chain_model = fk_chain(chain_model); % initialize chain
+    q_rad = get_q_chain(chain_model,chain_model.joint_names)';
+    if tick == 1, q_rad_diff = zeros(size(q_rad));
+    else, q_rad_diff = q_rad - q_rad_prev;
+    end
+    q_rad_prev = q_rad;
+    
+    % Update forward dynamic properties
+    
+    
+    
+    
+    
+end
+
+fprintf('Done.\n');
+
 
 %%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

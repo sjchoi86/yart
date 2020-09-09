@@ -22,41 +22,41 @@ addParameter(p,'MULTIPLE_MONITOR',0); % handling multiple-monitors
 addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors case
 addParameter(p,'view_info',[80,16]);
 addParameter(p,'axis_info','');
-addParameter(p,'PLOT_MESH',1);
+addParameter(p,'PLOT_MESH',true);
 addParameter(p,'mfc',0.5*[1,1,1]); % mesh face color
 addParameter(p,'mfa',0.4); % mesh face alpha
 addParameter(p,'bfc',0.5*[1,1,1]); % box face color
 addParameter(p,'bfa',0.5); % box face alpha
-addParameter(p,'PLOT_BCUBE',0);
-addParameter(p,'PLOT_COM',0);
-addParameter(p,'PLOT_LINK',1);
+addParameter(p,'PLOT_BCUBE',false);
+addParameter(p,'PLOT_COM',false);
+addParameter(p,'PLOT_LINK',true);
 addParameter(p,'llc','k'); % link line color
 addParameter(p,'llw',2); % link line width
 addParameter(p,'lls','-'); % link line style
-addParameter(p,'PLOT_ROTATE_AXIS',1);
+addParameter(p,'PLOT_ROTATE_AXIS',true);
 addParameter(p,'ral',def_r); % rotate axis length
 addParameter(p,'rac',''); % rotate axis color
 addParameter(p,'raa',0.5); % rotate axis alpha
 addParameter(p,'rasw',def_r/10); % rotate axis stem width
 addParameter(p,'ratw',def_r/5); % rotate axis tip width
-addParameter(p,'PLOT_JOINT_AXIS',1);
+addParameter(p,'PLOT_JOINT_AXIS',true);
 addParameter(p,'jal',def_r/2); % joint axis length
 addParameter(p,'jalw',2); % joint axis line width
 addParameter(p,'jals','-'); % joint axis line style
-addParameter(p,'PLOT_JOINT_SPHERE',1);
+addParameter(p,'PLOT_JOINT_SPHERE',true);
 addParameter(p,'jsfc','k'); % joint sphere face color
 addParameter(p,'jsfa',0.5); % joint sphere face alpha
 addParameter(p,'jsr',def_r/10); % joint sphere radius
-addParameter(p,'PLOT_VELOCITY',0);
+addParameter(p,'PLOT_VELOCITY',false);
 addParameter(p,'v_rate',1.0); % linear velocitiy arraw length rate
 addParameter(p,'w_rate',0.5); % angular velocitiy arraw length rate
-addParameter(p,'PRINT_JOINT_NAME',0);
-addParameter(p,'LOCATE_JOINT_NAME_AT_ROTATE_AXIS',0);
+addParameter(p,'PRINT_JOINT_NAME',false);
+addParameter(p,'LOCATE_JOINT_NAME_AT_ROTATE_AXIS',false);
 addParameter(p,'jnfs',15); % joint name font size
 addParameter(p,'jnfn','consolas'); % joint name font name
 addParameter(p,'jnfc','k'); % joint name font color
 
-addParameter(p,'PLOT_CAPSULE',0); % plot link capsule
+addParameter(p,'PLOT_CAPSULE',false); % plot link capsule
 addParameter(p,'cfc',0.5*[1,1,1]); % capsule face color
 addParameter(p,'cfa',0.4); % capsule face alpha
 addParameter(p,'cec','none'); % capsule edge color
@@ -64,6 +64,11 @@ addParameter(p,'cec','none'); % capsule edge color
 addParameter(p,'title_str',chain.name);
 addParameter(p,'tfs',20); % title font size
 addParameter(p,'tfn','consolas'); % title font name
+
+addParameter(p,'xm',''); % subaxes x margin
+addParameter(p,'ym',''); % subaxes y margin
+
+
 parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;
@@ -117,6 +122,9 @@ title_str = p.Results.title_str;
 tfs = p.Results.tfs;
 tfn = p.Results.tfn;
 
+xm = p.Results.xm;
+ym = p.Results.ym;
+
 
 % Plot start here
 if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
@@ -126,7 +134,8 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
     set_fig_position(h{fig_idx,subfig_idx}.fig,...
         'position',fig_pos,'ADD_TOOLBAR',1,'AXES_LABEL',1,...
         'view_info',view_info,'axis_info',axis_info,'SET_DRAGZOOM',1,'GRID_ON',1,...
-        'MULTIPLE_MONITOR',MULTIPLE_MONITOR,'monitor_idx',monitor_idx);
+        'MULTIPLE_MONITOR',MULTIPLE_MONITOR,'monitor_idx',monitor_idx,...
+        'xm',xm,'ym',ym);
     
     % Plot mesh and/or box
     if PLOT_MESH && isfield(chain,'link') % if link exists
@@ -143,8 +152,10 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
                 fv = link_i.fv;
                 if (~isempty(fv)) % if mesh exists
                     % Plot mesh with patch
+                    V = fv.vertices;
+                    V = V*(1.0 + 0.01*subfig_idx);
                     h{fig_idx,subfig_idx}.mesh{i_idx} = ...
-                        patch('faces',fv.faces,'vertices',fv.vertices,...
+                        patch('faces',fv.faces,'vertices',V,...
                         'FaceColor', mfc, ...
                         'EdgeColor', 'none','FaceLighting','gouraud',...
                         'AmbientStrength', 0.2, 'FaceAlpha', mfa);

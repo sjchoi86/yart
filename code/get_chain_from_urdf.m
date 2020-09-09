@@ -71,8 +71,10 @@ for i_idx = 1:chain.n_link
     link_i = robot.link{i_idx};
     chain.link(i_idx).name = link_i.Attributes.name; % link name
     chain.link_names{i_idx} = chain.link(i_idx).name;
+    
     % Get the parent joint index of the current link
     chain.link(i_idx).joint_idx = idx_cell(chain.child_link_names,chain.link(i_idx).name);
+    
     % Parse link mesh offset
     try
         rpy = str2num(link_i.visual.origin.Attributes.rpy)';
@@ -85,6 +87,7 @@ for i_idx = 1:chain.n_link
     R_offset = rpy2r(rpy);
     chain.link(i_idx).p_offset = p_offset;
     chain.link(i_idx).R_offset = R_offset;
+    
     % Parse link mesh scale
     try
         scale = str2num(link_i.visual.geometry.mesh.Attributes.scale)';
@@ -92,6 +95,7 @@ for i_idx = 1:chain.n_link
         scale = [1,1,1]';
     end
     chain.link(i_idx).scale = scale;
+    
     % Parse link mesh path
     try
         [~,name,ext] = fileparts(link_i.visual.geometry.mesh.Attributes.filename);
@@ -117,6 +121,7 @@ for i_idx = 1:chain.n_link
                 fprintf(2,'Unsupported file type:[%s].\n',ext);
         end
     end
+    
     % Get CAD Bounding Cube
     if ~isempty(chain.link(i_idx).fv)
         fv = chain.link(i_idx).fv;
@@ -155,7 +160,7 @@ end
 chain = update_chain_q(chain,chain.rev_joint_names,zeros(1,chain.n_rev_joint));
 chain = fk_chain(chain);
 
-% Get size of the model
+% Get size of the model (this one is incorrect)
 xyz_min = inf*ones(3,1);
 xyz_max = -inf*ones(3,1);
 for i_idx = 1:chain.n_joint

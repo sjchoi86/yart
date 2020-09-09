@@ -1,6 +1,8 @@
 function chain = update_chain_q(chain,names,q,varargin)
 %
 % Update the position of the kinematic chain
+% 
+% q: joint angles in radian
 %
 
 % Parse options

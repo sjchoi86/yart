@@ -46,21 +46,6 @@ else
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     % Save
     save(cache_path,'chain_model');
     fprintf(2,'[%s] saved.\n',cache_path);

@@ -44,7 +44,7 @@ if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
         end
         h{fig_idx,subfig_idx}.line{i_idx} = ...
             plot3([p1(1),p2(1)],[p1(2),p2(2)],[p1(3),p2(3)],...
-            color_i,'LineWidth',lw,'LineStyle',ls);
+            'Color',color_i,'LineWidth',lw,'LineStyle',ls);
     end
     
 else

@@ -1,6 +1,6 @@
 function q = get_q_chain(chain,joint_names)
 %
-% Get the position of the kinematic chain
+% Get the position (radian) of the kinematic chain
 %
 
 n_joint = length(joint_names);

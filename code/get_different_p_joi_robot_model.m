@@ -4,6 +4,7 @@ function [pr_root,pr_rs,pr_re,pr_rh,pr_ls,pr_le,pr_lh,pr_neck] = ...
 % Get different positions of JOI of the Robot Model 
 %
 
+% PR: position of a robot
 pr_root = get_p_joi_type(chain_model,joi_model,'root');
 pr_rs = get_p_joi_type(chain_model,joi_model,'rs');
 pr_re = get_p_joi_type(chain_model,joi_model,'re');
