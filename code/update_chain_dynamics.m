@@ -93,7 +93,7 @@ else
     if isempty(c)
         P = 0;
     else
-        P = m * (chain_model.joint(idx_to).v + cross(chain_model.joint(idx_to).w, c));
+        P = m * (chain_model.joint(idx_to).v' + cross(chain_model.joint(idx_to).w, c));
     end
     % Recursive
     childs = chain_model.joint(idx_to).childs;
@@ -116,7 +116,7 @@ else
         L = 0;
     else
         % L = m * (model.node(idx_to).v + cross(model.node(idx_to).w, c));
-        P = m * (chain_model.joint(idx_to).v' + cross(chain_model.joint(idx_to).w', c));
+        P = m * (chain_model.joint(idx_to).v' + cross(chain_model.joint(idx_to).w, c));
         L = cross(c, P) + (chain_model.link(link_idx).I*chain_model.joint(idx_to).w)';
     end
     % Recursive
