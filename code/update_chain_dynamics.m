@@ -65,9 +65,6 @@ chain_model.L = calc_model_l(chain_model,get_topmost_idx(chain_model));
 
 
 
-
-
-
 function R = get_r_a_to_b(a,b)
 %
 % R from a to b
@@ -115,7 +112,6 @@ else
     if isempty(c)
         L = 0;
     else
-        % L = m * (model.node(idx_to).v + cross(model.node(idx_to).w, c));
         P = m * (chain_model.joint(idx_to).v' + cross(chain_model.joint(idx_to).w, c));
         L = cross(c, P) + (chain_model.link(link_idx).I*chain_model.joint(idx_to).w)';
     end

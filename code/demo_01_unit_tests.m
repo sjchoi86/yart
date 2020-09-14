@@ -34,6 +34,9 @@ ccc
 % 30. Get Random Pose of a Robot Model and check self-collision
 % 31. Get the Workspace of JOI of a robot
 % 32. Rotate 3D vector with Slerp
+% 33. Motion Retargeting Parametrization
+% 34. Compute ZMP
+% 35. Slider control 
 %
 %% 1. Make figures with different positions
 ccc
@@ -1519,13 +1522,66 @@ for tick = 1:L % for each tick
     end
     drawnow limitrate; 
     
-    
 end
 
 fprintf('Done.\n');
 
+%% 35. Slider control 
+ccc
 
-%%
+model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
+
+% Trajectory
+HZ = 30;
+L = 200;
+degs_traj = zeros(L,7);
+for tick = 1:L
+    degs_traj(tick,:) = 180*D2R*sin(1*pi*tick/L)*[1,1,1,1,1,1,1];
+end
+
+% Precompute modelsmn
+chain_models = cell(1,L);
+for tick = 1:L
+    chain_model = update_chain_q(chain_model,chain_model.rev_joint_names,degs_traj(tick,:));
+    chain_model = fk_chain(chain_model); 
+    chain_models{tick} = chain_model;
+end
+
+% Figure
+fig = figure(1);
+view_info = [88,16];
+set_fig_position(fig,'position',[0.0,0.4,0.4,0.5],'view_info',view_info); % the set size
+
+% Add slider and button
+slider_max = L; % max slider tick
+sb = add_slider_and_button_to_figure(fig,slider_max,HZ,'y_offset',0.005,'y_height',0.03,...
+    'sliderstep',1/40,'fontsize',12,'VERBOSE',1);
+
+while ishandle(fig)
+    
+    % Process slider and button
+    sb = process_slider_and_button(sb);
+    
+    % Update model
+    chain_model = chain_models{sb.tick_slider};
+    
+    % Plot model
+    title_str = sprintf('wall:[%.2f]s [%d/%d] sim:[%.2f]s',...
+        sb.sec_wall,sb.tick_slider,sb.slider_max,sb.sec_sim);
+    plot_chain(chain_model,'fig_pos','','title_str',title_str);
+    drawnow;
+end
+fprintf('Done.\n');
+
+%% 36. GRP
+ccc
+
+
+
+
+
 
 
 

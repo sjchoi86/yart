@@ -142,19 +142,4 @@ for i_idx = 1:length(mocap_idxs) % for different mocap data
     
 end % for i_idx = 1:length(mocap_idxs) % for different mocap data
 
-%% 3.
-ccc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+%% 

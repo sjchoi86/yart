@@ -2,6 +2,8 @@ function chain = fv_chain(chain,idx_to)
 %
 % Forward Velocities
 %
+% We need 'q_diff' and 'dt' to be pre-determined. 
+%
 if nargin == 1
     idx_to = get_topmost_idx(chain); % start from the topmost joint
 end
