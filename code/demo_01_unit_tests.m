@@ -1575,23 +1575,44 @@ while ishandle(fig)
 end
 fprintf('Done.\n');
 
-%% 36. GRP
+%% 36. Basics of GRP mu, d_mu, and dd_mu
 ccc
 
+t_max = 4*pi;
+t_ref = linspace(0,t_max,1000)';
+f_ref = @(x)(cos(x));
+x_ref = f_ref(t_ref);
+
+% Anchor dataset 
+n_anchor = 100;
+t_anchor = linspace(0,t_max,n_anchor)';
+x_anchor = f_ref(t_anchor) + sqrt(0.0)*randn(size(t_anchor));
+
+% GRP
+n_test = 1000;
+t_test = linspace(0,t_max,n_test)';
+hyp = [1,1]; % [gain,len]
+[k_test,dk_test,ddk_test] = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
+K_anchor = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp);
+
+eps = 1e-8; % expected noise
+mu_test = k_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
+dmu_test = dk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
+ddmu_test = ddk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
 
 
+% Plot
+fig = figure();
+set_fig_position(fig,'position',[0.0,0.4,0.5,0.4],'AXIS_EQUAL',0,'SET_DRAGZOOM',0);
+h_ref = plot(t_ref,x_ref,'k-','linewidth',1); 
+h_anchor = plot(t_anchor,x_anchor,'bo','linewidth',2,'markersize',15);
+h_mu = plot(t_test,mu_test,'b--','linewidth',4);
+h_dmu = plot(t_test,dmu_test,'-','linewidth',2,'Color','m');
+h_ddmu = plot(t_test,ddmu_test,'-','linewidth',2,'Color','c');
+legend([h_ref,h_anchor,h_mu,h_dmu,h_ddmu],{'Ref','Anchor','mu','d_mu','dd_mu'},'fontsize',15,...
+    'interpreter','none');
 
-
-
-
-
-
-
-
-
-
-
-
+%% 
 
 
 
