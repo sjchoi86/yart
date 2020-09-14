@@ -1595,9 +1595,9 @@ t_test = linspace(0,t_max,n_test)';
 hyp = [1,1]; % [gain,len]
 [k_test,dk_test,ddk_test] = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
 K_anchor = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp);
-eps = 1e-8; % expected noise
 
 % Compute mu, d_mu, and dd_mu
+eps = 1e-8; % expected noise
 mu_test = k_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
 dmu_test = dk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
 ddmu_test = ddk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
@@ -1616,17 +1616,53 @@ legend([h_ref,h_anchor,h_mu,h_dmu,h_ddmu],{'Ref','Anchor','mu','d_mu','dd_mu'},'
 %% 37. GRP sampling 
 ccc
 
+% Anchor points
+eps_ru = 0.01;
+t_anchor = [0,eps_ru,0.5,1.0-eps_ru,1.0]';
+x_anchor = [0,0,3,0,0]';
+l_anchor = [1,1,0.5,1,1]';
+n_anchor = size(t_anchor,1);
 
+% Define GRP
+n_test = 1000;
+t_test = linspace(0,1,n_test)';
+hyp = [3,0.5]; % [gain,len]
 
+% Compute GP mu and std
+k_test_mu = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
+K_anchor_mu = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp);
+eps_mu = 1e-8; % expected noise
+mu_test = k_test_mu / (K_anchor_mu+eps_mu*eye(n_anchor,n_anchor)) * x_anchor;
 
+% Sample trajectories from GRP
+k_test_var = kernel_levse(t_test,t_anchor,ones(n_test,1),l_anchor,hyp);
+K_anchor_var = kernel_levse(t_anchor,t_anchor,l_anchor,l_anchor,hyp);
+eps_var = 1e-6;
+var_test = diag(abs(hyp(1) - ...
+    k_test_var / (K_anchor_var+eps_var*eye(n_anchor,n_anchor)) * k_test_var'));
+std_test = sqrt(var_test);
+K_test = kernel_levse(t_test,t_test,ones(n_test,1),ones(n_test,1),hyp) - ...
+    k_test_var / (K_anchor_var+eps_var*eye(n_anchor,n_anchor)) * k_test_var';
+K_test = 0.5*K_test + 0.5*K_test';
+K_max = max(K_test(:));
+chol_K = chol(K_test/K_max + 1e-6*eye(n_test,n_test),'lower');
+n_path = 10;
+sampled_paths = sqrt(K_max)*chol_K*randn(n_test,n_path) + mu_test;
 
+% Plot
+fig = figure();
+set_fig_position(fig,'position',[0.0,0.4,0.5,0.4],'AXIS_EQUAL',0,'SET_DRAGZOOM',0);
+h_fill = fill([t_test;flipud(t_test)],[mu_test-2*std_test ;flipud(mu_test+2*std_test)],...
+    'r','LineStyle',':'); % grp 2std
+set(h_fill,'FaceAlpha',0.1);
+for i_idx = 1:n_path
+    sampled_path = sampled_paths(:,i_idx);
+    plot(t_test,sampled_path,'-','linewidth',0.5,'color',0.4*[1,1,1]);
+end
+h_anchor = plot(t_anchor,x_anchor,'bo','linewidth',2,'markersize',15);
+h_mu = plot(t_test,mu_test,'b-','linewidth',2);
 
-
-
-
-
-
-
+%%
 
 
 
