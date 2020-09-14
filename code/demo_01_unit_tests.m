@@ -1578,28 +1578,29 @@ fprintf('Done.\n');
 %% 36. Basics of GRP mu, d_mu, and dd_mu
 ccc
 
+% Reference data
+f_ref = @(x)(cos(x)); % reference function
 t_max = 4*pi;
 t_ref = linspace(0,t_max,1000)';
-f_ref = @(x)(cos(x));
 x_ref = f_ref(t_ref);
 
-% Anchor dataset 
+% Anchor dataset (training data) 
 n_anchor = 100;
 t_anchor = linspace(0,t_max,n_anchor)';
 x_anchor = f_ref(t_anchor) + sqrt(0.0)*randn(size(t_anchor));
 
-% GRP
+% Gaussian random path
 n_test = 1000;
 t_test = linspace(0,t_max,n_test)';
 hyp = [1,1]; % [gain,len]
 [k_test,dk_test,ddk_test] = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
 K_anchor = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp);
-
 eps = 1e-8; % expected noise
+
+% Compute mu, d_mu, and dd_mu
 mu_test = k_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
 dmu_test = dk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
 ddmu_test = ddk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
-
 
 % Plot
 fig = figure();
@@ -1612,7 +1613,9 @@ h_ddmu = plot(t_test,ddmu_test,'-','linewidth',2,'Color','c');
 legend([h_ref,h_anchor,h_mu,h_dmu,h_ddmu],{'Ref','Anchor','mu','d_mu','dd_mu'},'fontsize',15,...
     'interpreter','none');
 
-%% 
+%% 37. GRP sampling 
+ccc
+
 
 
 
