@@ -323,16 +323,21 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
         for i_idx = 1:chain.n_link
             link_i = chain.link(i_idx);
             if ~isempty(link_i.fv) % if mesh exists,
-                joint_i = chain.joint(link_i.joint_idx); % joint attached to the link 
-                T_joint = pr2t(joint_i.p,joint_i.R); % joint position
-                T_com = T_joint*p2t(link_i.bcube.c_offset); % center of mass
-                p_com = t2p(T_com);
+                joint_i = chain.joint(link_i.joint_idx);
+                if ~isempty(link_i.com) % if com is already calculated
+                    p_com = link_i.com.';
+                else
+                    T_joint = pr2t(joint_i.p,joint_i.R); % actual link position
+                    T_com = T_joint*p2t(link_i.bcube.c_offset); % center of mass
+                    p_com = t2p(T_com);
+                end
                 v = joint_i.v; % linear velocity at the world coordinate
                 w = joint_i.w; % angular velocity at the world coordinate
                 if h{fig_idx,subfig_idx}.first_flag
                     v = [0,0,0]';
                     w = [0,0,0]';
                 end
+                
                 p_v = p_com + v*v_rate;
                 p_w = p_com + w*w_rate;
                 % Linear velocity (red)
@@ -427,8 +432,12 @@ else
             end
             
             if PLOT_COM && (~isempty(bcube))
-                T = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R);
-                tform = T*pr2t(bcube.c_offset);
+                if ~isempty(link_i.com) % if CoM is already calculated
+                    tform = pr2t(link_i.com);
+                else
+                    T = pr2t(chain.joint(link_i.joint_idx).p,chain.joint(link_i.joint_idx).R);
+                    tform = T*pr2t(bcube.c_offset);
+                end
                 set(h{fig_idx,subfig_idx}.com_t{i_idx},'Matrix',tform);
             end
         end
