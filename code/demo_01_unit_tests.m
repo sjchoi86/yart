@@ -35,8 +35,12 @@ ccc
 % 31. Get the Workspace of JOI of a robot
 % 32. Rotate 3D vector with Slerp
 % 33. Motion Retargeting Parametrization
-% 34. Compute ZMP
-% 35. Slider control 
+% 34. Compute Linear/Angular Momentum
+% 35. Compute ZMP
+% 36. Slider Control
+% 37. Get mu, d_mu, and dd_mu of GRP
+% 38. GRP sampling
+% 39. Surface plot
 %
 %% 1. Make figures with different positions
 ccc
@@ -1680,20 +1684,20 @@ h_ddmu = plot(t_test,ddmu_test,'-','linewidth',2,'Color','c');
 legend([h_ref,h_anchor,h_mu,h_dmu,h_ddmu],{'Ref','Anchor','mu','d_mu','dd_mu'},'fontsize',15,...
     'interpreter','none');
 
-%% 37. GRP sampling 
+%% 38. GRP sampling 
 ccc
 
 % Anchor points
-eps_ru = 0.01;
-t_anchor = [0,eps_ru,0.5,1.0-eps_ru,1.0]';
-x_anchor = [0,0,3,0,0]';
-l_anchor = [1,1,0.5,1,1]';
+eps_ru = 0.0;
+t_anchor = [0,eps_ru,1/3,2/3,1.0-eps_ru,1.0]';
+x_anchor = [0,0,1.0,-1.0,0,0]';
+l_anchor = [1,1,1,1,1,1]';
 n_anchor = size(t_anchor,1);
 
 % Define GRP
 n_test = 1000;
 t_test = linspace(0,1,n_test)';
-hyp = [3,0.5]; % [gain,len]
+hyp = [1,0.2]; % [gain,len]
 
 % Compute GP mu and std
 k_test_mu = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
@@ -1713,23 +1717,64 @@ K_test = kernel_levse(t_test,t_test,ones(n_test,1),ones(n_test,1),hyp) - ...
 K_test = 0.5*K_test + 0.5*K_test';
 K_max = max(K_test(:));
 chol_K = chol(K_test/K_max + 1e-6*eye(n_test,n_test),'lower');
-n_path = 10;
-sampled_paths = sqrt(K_max)*chol_K*randn(n_test,n_path) + mu_test;
+n_path = 100;
+randomness = randn(n_test,n_path); 
+sampled_paths = sqrt(K_max)*chol_K*randomness + mu_test;
 
 % Plot
 fig = figure();
-set_fig_position(fig,'position',[0.0,0.4,0.5,0.4],'AXIS_EQUAL',0,'SET_DRAGZOOM',0);
+set_fig_position(fig,'position',[0.0,0.4,0.5,0.4],'AXIS_EQUAL',0,'SET_DRAGZOOM',0,'AXES_LABEL',0);
 h_fill = fill([t_test;flipud(t_test)],[mu_test-2*std_test ;flipud(mu_test+2*std_test)],...
-    'r','LineStyle',':'); % grp 2std
+    'k','LineStyle',':'); % grp 2std
 set(h_fill,'FaceAlpha',0.1);
+colors = linspecer(n_path);
 for i_idx = 1:n_path
     sampled_path = sampled_paths(:,i_idx);
-    plot(t_test,sampled_path,'-','linewidth',0.5,'color',0.4*[1,1,1]);
+    color = colors(i_idx,:); % 0.4*[1,1,1];
+    plot(t_test,sampled_path,'-','linewidth',1.0,'color',color);
 end
-h_anchor = plot(t_anchor,x_anchor,'bo','linewidth',2,'markersize',15);
-h_mu = plot(t_test,mu_test,'b-','linewidth',2);
+h_anchor = plot(t_anchor,x_anchor,'ko','linewidth',3,'markersize',15);
+h_mu = plot(t_test,mu_test,'k-','linewidth',4);
+legend([h_anchor,h_mu,h_fill],{'Data','GP mu','GP std'},'fontsize',20);
+
+%% 39. Surface plot
+ccc
+
+[rho,w] = meshgrid(-4:0.1:1,-5:0.2:5);
+[rho_line,w_line] = meshgrid(-4:0.1:1,1);
+alpha = 1;
+zeta = 0.5;
+
+s = rho + 1i*w;
+G = (s + alpha)./(s.*s + 2*zeta*s + 1);
+norm_G = abs(G);
+angle_G = angle(G);
+
+s_line = rho_line + 1i*w_line;
+G_line = (s_line + alpha)./(s_line.*s_line + 2*zeta*s_line + 1);
+norm_G_line = abs(G_line);
+angle_G_line = angle(G_line);
+
+figure(1); hold on;
+colormap summer;
+surf(rho,w,norm_G,'linewidth',0.5,'FaceAlpha',0.5,'edgecolor','interp'); % 'edgecolor': 'none' or 'interp'
+plot3(rho_line,w_line,norm_G_line,'k-','linewidth',3);
+xlabel('\rho'); ylabel('w');
+view(155,26);
 
 %%
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
