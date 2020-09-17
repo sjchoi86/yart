@@ -21,8 +21,6 @@ for i_idx = 1:chain_model.n_link % for all link
     radius_i = capsule_i.radius;
     height_i = capsule_i.height;
     
-    % Center of mass of each link 
-    chain_model.link(i_idx).com = 0.5*(cline_i.e1+cline_i.e2)';
     % Mass of each link
     mass_i = density*((4/3)*pi*(radius_i^3)+pi*(radius_i^2)*height_i);
     if mass_i > 30
@@ -88,10 +86,15 @@ else
     c = chain_model.link(link_idx).com;
     m = chain_model.link(link_idx).mass;
     if isempty(c)
-        P = 0;
+        P = [0 0 0];
     else
-        P = m * (chain_model.joint(idx_to).v' + cross(chain_model.joint(idx_to).w, c));
+        v = chain_model.link(link_idx).v.';
+        w = chain_model.link(link_idx).w;
+        R = chain_model.joint(idx_to).R;
+
+        P = m * (v.' + cross(w, R * chain_model.joint(idx_to).com_local.')).'; % Kajita (3.63-64)
     end
+    
     % Recursive
     childs = chain_model.joint(idx_to).childs;
     for child = childs
@@ -112,8 +115,13 @@ else
     if isempty(c)
         L = 0;
     else
-        P = m * (chain_model.joint(idx_to).v' + cross(chain_model.joint(idx_to).w, c));
-        L = cross(c, P) + (chain_model.link(link_idx).I*chain_model.joint(idx_to).w)';
+        c1 = c - chain_model.joint(idx_to).p.'; % CoM relative to the parent joint and expressed in the global coordinate - Kajita Fig 3.24
+        I = chain_model.link(link_idx).I; % I = R * Ibar * R.' already
+        w = chain_model.link(link_idx).w;
+        v = chain_model.joint(idx_to).v;
+        
+        Pj = m * (v.' + cross(w, c1)); % P in Kajita Fig 3.24
+        L = (cross(c, Pj).' + I * w).'; % Kajita (3.66)
     end
     % Recursive
     childs = chain_model.joint(idx_to).childs;

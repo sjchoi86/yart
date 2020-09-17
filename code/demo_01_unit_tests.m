@@ -1453,7 +1453,74 @@ for tick = 2:L
     
 end
 
-%% 34. Compute ZMP
+%% 34. Compute Linear/Angular Momentum
+ccc
+% Load model 
+model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
+T = 0.01; chain_model.dt = T; % set time step
+HZ = round(1/T); len = 1000;
+
+momentum_scaler = 0.05;
+
+for tick = 1:len % for each tick
+    
+    % Update model, dynamics and ZMP
+    sec = tick * T; w = 5*pi/len;
+    chain_model = update_chain_q(chain_model,{'joint1','joint2','joint3'},...
+        [90*D2R*cos(w*tick),90*D2R*cos(w*tick),0*D2R*cos(w*tick)]);
+    chain_model = fk_chain(chain_model); % forward kinematics
+    chain_model = fv_chain(chain_model); % forward velocities
+    q_rad = get_q_chain(chain_model,chain_model.joint_names)';
+    if tick == 1, q_rad_diff = zeros(size(q_rad));
+    else, q_rad_diff = q_rad - q_rad_prev;
+    end
+    q_rad_prev = q_rad;
+    
+    % Update forward dynamic properties
+    joints = chain_model.rev_joint_names;
+    chain_model = update_chain_dynamics(chain_model,joints,q_rad_diff,T);
+    
+    title_str = sprintf('[%d/%d]',tick,len);
+    axis_info = [-1.0,+1.0,-1.0,+1.0,+0.0,+2.0];
+    plot_chain(chain_model,'axis_info',axis_info,...
+        'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
+        'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.05,'w_rate',0.03,...
+        'title_str',title_str,'view_info',[88,17]);
+    sr = chain_model.xyz_len(3)/30;
+    
+    % Scale momentums for plotting
+    P_arrow = chain_model.com + [0, 0, 0; chain_model.P * momentum_scaler]
+    L_arrow = chain_model.com + [0, 0, 0; chain_model.L * momentum_scaler];
+    [~,~,h_P] = plot_T(pr2t(P_arrow(2,:),eye(3,3)),'subfig_idx',1,...
+        'PLOT_AXIS',0, 'PLOT_SPHERE',1,'sr',sr,'sfc','r','sfa',0.8);
+    [~,~,h_L] = plot_T(pr2t(L_arrow(2,:),eye(3,3)),'subfig_idx',2,...
+        'PLOT_AXIS',0, 'PLOT_SPHERE',1,'sr',sr,'sfc','b','sfa',0.8);
+    
+    if tick == 1
+        h_P_arrow = plot3(P_arrow(:,1), P_arrow(:,2), P_arrow(:,3),'-', 'color','r','linewidth',3);
+        h_L_arrow = plot3(L_arrow(:,1), L_arrow(:,2), L_arrow(:,3),'-', 'color','b','linewidth',3);
+    else
+        h_P_arrow.XData = P_arrow(:,1); 
+        h_P_arrow.YData = P_arrow(:,2); 
+        h_P_arrow.ZData = P_arrow(:,3);
+        h_L_arrow.XData = L_arrow(:,1); 
+        h_L_arrow.YData = L_arrow(:,2);
+        h_L_arrow.ZData = L_arrow(:,3);
+    end
+    if tick == 1
+        h_leg = legend([h_P,h_L],{'$\mathcal{P}$','$\mathcal{L}$'}, ...
+            'fontsize',25,'interpreter', 'latex',...
+            'location','southeast','fontname','Consolas');
+    end
+    drawnow limitrate; 
+    
+end
+
+fprintf('Done.\n');
+
+%% 35. Compute ZMP
 ccc
 % Load model 
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
@@ -1526,7 +1593,7 @@ end
 
 fprintf('Done.\n');
 
-%% 35. Slider control 
+%% 36. Slider control 
 ccc
 
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
@@ -1575,7 +1642,7 @@ while ishandle(fig)
 end
 fprintf('Done.\n');
 
-%% 36. Basics of GRP mu, d_mu, and dd_mu
+%% 37. Basics of GRP mu, d_mu, and dd_mu
 ccc
 
 % Reference data
