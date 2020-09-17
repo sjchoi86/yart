@@ -18,6 +18,7 @@ if ~isempty(idx_fr)
     joint_to = chain.joint(idx_to);
     % update p
     chain.joint(idx_to).p = joint_fr.R*joint_to.p_offset + joint_fr.p;
+    
     % update R
     if isfield(joint_to,'a') % this may cause some time delays.. (~10% load)
         q = joint_to.q;
@@ -33,10 +34,12 @@ if ~isempty(link_table)
 
     if ~isempty(chain.link(link_idx_to).bcube)
         % Center of Mass of each link represented in local joint coordinate system
-        chain.joint(idx_to).com_local = chain.link(link_idx_to).bcube.c_offset.'; 
+        chain.joint(idx_to).com_local = chain.link(link_idx_to).bcube.c_offset; 
 
         % Center of mass of each link represented in global coordinate system
-        chain.link(link_idx_to).com = (chain.joint(idx_to).p + chain.joint(idx_to).R * chain.joint(idx_to).com_local.').'; % Kajita (3.59)
+        % Kajita (3.59)
+        chain.link(link_idx_to).com = (chain.joint(idx_to).p + ...
+            chain.joint(idx_to).R * chain.joint(idx_to).com_local); 
     end
 end
 

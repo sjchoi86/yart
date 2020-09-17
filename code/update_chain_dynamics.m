@@ -43,7 +43,7 @@ for i_idx = 1:chain_model.n_link % for all link
 end
 
 % Compute total CoM position
-M = 0; MC = [0,0,0];
+M = 0; MC = [0,0,0]';
 for i_idx = 1:chain_model.n_link
     if isempty(chain_model.link(i_idx).mass)
         continue;
@@ -88,11 +88,11 @@ else
     if isempty(c)
         P = [0 0 0];
     else
-        v = chain_model.link(link_idx).v.';
+        v = chain_model.link(link_idx).v;
         w = chain_model.link(link_idx).w;
         R = chain_model.joint(idx_to).R;
 
-        P = m * (v.' + cross(w, R * chain_model.joint(idx_to).com_local.')).'; % Kajita (3.63-64)
+        P = m * (v + cross(w, R * chain_model.joint(idx_to).com_local)); % Kajita (3.63-64)
     end
     
     % Recursive
@@ -115,12 +115,12 @@ else
     if isempty(c)
         L = 0;
     else
-        c1 = c - chain_model.joint(idx_to).p.'; % CoM relative to the parent joint and expressed in the global coordinate - Kajita Fig 3.24
+        c1 = c - chain_model.joint(idx_to).p; % CoM relative to the parent joint and expressed in the global coordinate - Kajita Fig 3.24
         I = chain_model.link(link_idx).I; % I = R * Ibar * R.' already
         w = chain_model.link(link_idx).w;
         v = chain_model.joint(idx_to).v;
         
-        Pj = m * (v.' + cross(w, c1)); % P in Kajita Fig 3.24
+        Pj = m * (v + cross(w, c1)); % P in Kajita Fig 3.24
         L = (cross(c, Pj).' + I * w).'; % Kajita (3.66)
     end
     % Recursive

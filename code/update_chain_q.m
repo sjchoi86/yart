@@ -28,7 +28,9 @@ for i_idx = 1:length(names)
     
     % Compute the position difference
     if isfield(chain.joint(joint_idx),'q_prev')
-        chain.joint(joint_idx).q_diff = chain.joint(joint_idx).q - chain.joint(joint_idx).q_prev;
+        q_diff = chain.joint(joint_idx).q - chain.joint(joint_idx).q_prev;
+        q_diff = mod(q_diff+pi,2*pi)-pi;
+        chain.joint(joint_idx).q_diff = q_diff;
         chain.joint(joint_idx).q_prev = chain.joint(joint_idx).q;
     end
 end

@@ -1495,7 +1495,7 @@ for tick = 1:len % for each tick
     sr = chain_model.xyz_len(3)/30;
     
     % Scale momentums for plotting
-    P_arrow = chain_model.com + [0, 0, 0; chain_model.P * momentum_scaler]
+    P_arrow = chain_model.com + [0, 0, 0; chain_model.P * momentum_scaler];
     L_arrow = chain_model.com + [0, 0, 0; chain_model.L * momentum_scaler];
     [~,~,h_P] = plot_T(pr2t(P_arrow(2,:),eye(3,3)),'subfig_idx',1,...
         'PLOT_AXIS',0, 'PLOT_SPHERE',1,'sr',sr,'sfc','r','sfa',0.8);
@@ -1537,16 +1537,19 @@ com_traj = nan*ones(HZ,3); zmp_traj = nan*ones(HZ,3); % remain 1sec
 for tick = 1:L % for each tick
     
     % Update model, dynamics and ZMP
-    sec = tick * T; w = 5*pi/L;
+    sec = tick * T; w = 10*pi/L;
     chain_model = update_chain_q(chain_model,{'joint1','joint2','joint3'},...
-        [90*D2R*cos(w*tick),90*D2R*cos(w*tick),0*D2R*cos(w*tick)]);
+        [mod(90*D2R*(w*tick),2*pi),90*D2R + 0*D2R*cos(w*tick),0*D2R*cos(w*tick)],...
+        'IGNORE_LIMIT',1);
     chain_model = fk_chain(chain_model); % forward kinematics
     chain_model = fv_chain(chain_model); % forward velocities
     q_rad = get_q_chain(chain_model,chain_model.joint_names)';
     if tick == 1, q_rad_diff = zeros(size(q_rad));
     else, q_rad_diff = q_rad - q_rad_prev;
     end
+    q_rad_diff = mod(q_rad_diff+pi,2*pi)-pi;
     q_rad_prev = q_rad;
+    
     
     % Update forward dynamic properties
     joints = chain_model.rev_joint_names;
@@ -1594,6 +1597,7 @@ for tick = 1:L % for each tick
     drawnow limitrate; 
     
 end
+ 
 
 fprintf('Done.\n');
 

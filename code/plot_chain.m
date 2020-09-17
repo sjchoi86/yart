@@ -325,7 +325,7 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
             if ~isempty(link_i.fv) % if mesh exists,
                 joint_i = chain.joint(link_i.joint_idx);
                 if ~isempty(link_i.com) % if com is already calculated
-                    p_com = link_i.com.';
+                    p_com = link_i.com;
                 else
                     T_joint = pr2t(joint_i.p,joint_i.R); % actual link position
                     T_com = T_joint*p2t(link_i.bcube.c_offset); % center of mass
