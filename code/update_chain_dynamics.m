@@ -86,7 +86,7 @@ else
     c = chain_model.link(link_idx).com;
     m = chain_model.link(link_idx).mass;
     if isempty(c)
-        P = [0 0 0];
+        P = [0 0 0]';
     else
         v = chain_model.link(link_idx).v;
         w = chain_model.link(link_idx).w;
@@ -115,13 +115,15 @@ else
     if isempty(c)
         L = 0;
     else
-        c1 = c - chain_model.joint(idx_to).p; % CoM relative to the parent joint and expressed in the global coordinate - Kajita Fig 3.24
+        % CoM relative to the parent joint and expressed in the global coordinate 
+        % Kajita Fig 3.24
+        c1 = c - chain_model.joint(idx_to).p; 
         I = chain_model.link(link_idx).I; % I = R * Ibar * R.' already
         w = chain_model.link(link_idx).w;
         v = chain_model.joint(idx_to).v;
         
         Pj = m * (v + cross(w, c1)); % P in Kajita Fig 3.24
-        L = (cross(c, Pj).' + I * w).'; % Kajita (3.66)
+        L = (cross(c, Pj) + I * w); % Kajita (3.66)
     end
     % Recursive
     childs = chain_model.joint(idx_to).childs;

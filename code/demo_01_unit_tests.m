@@ -44,7 +44,7 @@ ccc
 %
 %% 1. Make figures with different positions
 ccc
-for tick = 1:10 % animate ticks
+for tick = 1:2 % animate ticks
     set_fig_position(figure(1),'position',[0.0,0.6,0.2,0.35],'ADD_TOOLBAR',0,'view_info',[80,16],...
         'title_str',sprintf('Figure 1 tick:[%d]',tick));
     set_fig_position(figure(2),'position',[0.2,0.6,0.2,0.35],'ADD_TOOLBAR',0,'view_info',[80,16],...
@@ -342,7 +342,7 @@ vid_obj = init_vid_record('../vid/unit_test/ut09_interpolate_rotations.mp4','HZ'
 for t = linspace(0,1,100)
     R_t = R1*expm(w_hat*t);
     % Plot
-    set_fig_position(figure(1),'position',[0.5,0.5,0.2,0.35],'ADD_TOOLBAR',1,'AXES_LABEL',1,...
+    fig = set_fig_position(figure(1),'position',[0.5,0.5,0.2,0.35],'ADD_TOOLBAR',1,'AXES_LABEL',1,...
         'view_info',[80,16],'axis_info',3*[-1,+1,-1,+1,-1,+1],'SET_DRAGZOOM',1,'GRID_ON',1);
     plot_T(r2t(R1),'subfig_idx',1,'text_str','R1','TEXT_AT_ZTIP',1);
     plot_T(r2t(R2),'subfig_idx',2,'text_str','R2','TEXT_AT_ZTIP',1);
@@ -350,6 +350,8 @@ for t = linspace(0,1,100)
         'text_str','R_t','TEXT_AT_ZTIP',1,'text_fs',20,'text_color','b');
     plot_title(sprintf('[%.2f] Interpolate R1 ad R2',t));
     drawnow; record_vid(vid_obj);
+    
+    if ~ishandle(fig), break; end
 end
 end_vid_record(vid_obj);
 
@@ -382,6 +384,7 @@ for tick = 1:max_tick
         'PLOT_MESH',1,'PLOT_LINK',1,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,...
         'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,...
         'title_str',sprintf('[%s][%d]',chain.name,tick));
+    if ~ishandle(fig), break; end
     drawnow limitrate;
 end
 ems_fk_avg = ems_fk_total / max_tick;
@@ -616,10 +619,12 @@ for tick = 1:max_tick
     chain = fk_chain(chain); % forward kinematics
     chain = fv_chain(chain); % forward velocities
     title_str = sprintf('[%.3f]sec Linear Velocity (red) Angular Velocity (blue)',tick*chain.dt);
-    plot_chain(chain,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
+    fig = plot_chain(chain,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
         'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.5,'w_rate',0.3,...
         'title_str',title_str,'view_info',[35,47]);
     drawnow limitrate; record_vid(vid_obj);
+    
+    if ~ishandle(fig), break; end
 end
 end_vid_record(vid_obj);
 
@@ -907,15 +912,19 @@ for i_idx = 1:n_unique % for mocaps with unique action names
         for tick = 1:L
             chain = chains{tick};
             title_str = sprintf('[%d/%d][%.2f]s [%s]',tick,L,tick/HZ,action_str);
-            plot_chain(chain,'fig_pos',[0.5,0.6,0.3,0.4],...
+            fig = plot_chain(chain,'fig_pos',[0.5,0.6,0.3,0.4],...
                 'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.08,...
                 'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.03,'jsfa',0.7,'PRINT_JOINT_NAME',0,...
                 'title_str',title_str,'tfs',13);
             plot_T(pr2t([0,0,0]',eye(3,3)),'PLOT_SPHERE',0);
             drawnow; record_vid(vid_obj);
+            
+            if ~ishandle(fig), break; end
         end
         end_vid_record(vid_obj); % save video
     end
+    
+    if ~ishandle(fig), break; end
 end
 
 %% 22. Show graph of MoCap skeleton
@@ -1203,7 +1212,7 @@ for tick = 1:L % for all tick
     chain_mocap_llm = get_chain_mocap_llm(chain_mocap,joi_mocap,llm_stuct);
     
     % Plot the original MoCap skeleton
-    plot_chain(chain_mocap,...
+    fig1 = plot_chain(chain_mocap,...
         'fig_idx',1,'fig_pos',[0.0,0.6,0.3,0.4], ...
         'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.02,...
         'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.02,'jsfa',0.1,'PRINT_JOINT_NAME',0,...
@@ -1214,7 +1223,7 @@ for tick = 1:L % for all tick
     plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',1,'PLOT_SPHERE',0);
     
     % Plot the link length modified MoCap skeleton
-    plot_chain(chain_mocap_llm,...
+    fig2 = plot_chain(chain_mocap_llm,...
         'fig_idx',2,'fig_pos',[0.3,0.6,0.3,0.4], ...
         'PLOT_LINK',1,'llw',2,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',1,'jal',0.02,...
         'PLOT_JOINT_SPHERE',1,'jsfc','c','jsr',0.02,'jsfa',0.1,'PRINT_JOINT_NAME',0,...
@@ -1224,6 +1233,8 @@ for tick = 1:L % for all tick
         'PRINT_JOI_NAME',0);
     plot_T(pr2t([0,0,0]',eye(3,3)),'fig_idx',2,'PLOT_SPHERE',0);
     drawnow limitrate;
+    
+    if (~ishandle(fig1) || ~ishandle(fig2)), break; end
 end
 
 %% 29. Get the Robot Model with Bounding Capsules (and Caching)
@@ -1269,7 +1280,7 @@ for cnt = 1:10
     
     % Plot the Robot Model
     ral = chain_model.xyz_len(3)/10; rasw = ral/10; ratw = ral/5;
-    plot_chain(chain_model,...
+    fig = plot_chain(chain_model,...
         'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info','',...
         'PLOT_MESH',1,'mfa',0.4,'PLOT_LINK',1,...
         'PLOT_ROTATE_AXIS',0,'ral',ral,'rasw',rasw,'ratw',ratw,...
@@ -1281,6 +1292,8 @@ for cnt = 1:10
     plot_joi_chain(chain_model,joi_model,'joi_types','','PLOT_COORD',1,'clen',clen);
     plot_sc_capsules(chain_model,sc_ij_list,'cfa',0.3); % plot self-collided capsules
     drawnow limitrate; pause;
+    
+    if ~ishandle(fig), break; end
 end
 
 %% 31. Get the Workspace of JOI of a robot
@@ -1427,7 +1440,7 @@ for tick = 2:L
     % Plot the robot model
     title_str = sprintf('[%d/%d] [%s]-[%s]',tick,L,model_name,action_str);
     axis_info = [-inf,inf,-1.1,1.1,chain_model_sz.xyz_min(3),1.1];
-    plot_chain(chain_model,'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info',axis_info,...
+    fig = plot_chain(chain_model,'fig_idx',1,'subfig_idx',1,'view_info',[88,4],'axis_info',axis_info,...
         'PLOT_MESH',1,'mfa',0.1,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,...
         'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,'PLOT_CAPSULE',0,...
         'title_str',title_str,'tfs',25);
@@ -1455,6 +1468,7 @@ for tick = 2:L
         'subfig_idx',1,'color','k','lw',3);
     drawnow;
     
+    if ~ishandle(fig), break; end
 end
 
 %% 34. Compute Linear/Angular Momentum
@@ -1481,6 +1495,7 @@ for tick = 1:len % for each tick
     else, q_rad_diff = q_rad - q_rad_prev;
     end
     q_rad_prev = q_rad;
+    q_rad_diff = mod(q_rad_diff-pi,2*pi)+pi;
     
     % Update forward dynamic properties
     joints = chain_model.rev_joint_names;
@@ -1488,15 +1503,15 @@ for tick = 1:len % for each tick
     
     title_str = sprintf('[%d/%d]',tick,len);
     axis_info = [-1.0,+1.0,-1.0,+1.0,+0.0,+2.0];
-    plot_chain(chain_model,'axis_info',axis_info,...
+    fig = plot_chain(chain_model,'axis_info',axis_info,...
         'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
         'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.05,'w_rate',0.03,...
         'title_str',title_str,'view_info',[88,17]);
     sr = chain_model.xyz_len(3)/30;
     
     % Scale momentums for plotting
-    P_arrow = chain_model.com + [0, 0, 0; chain_model.P * momentum_scaler];
-    L_arrow = chain_model.com + [0, 0, 0; chain_model.L * momentum_scaler];
+    P_arrow = chain_model.com' + [0, 0, 0; chain_model.P' * momentum_scaler];
+    L_arrow = chain_model.com' + [0, 0, 0; chain_model.L' * momentum_scaler];
     [~,~,h_P] = plot_T(pr2t(P_arrow(2,:),eye(3,3)),'subfig_idx',1,...
         'PLOT_AXIS',0, 'PLOT_SPHERE',1,'sr',sr,'sfc','r','sfa',0.8);
     [~,~,h_L] = plot_T(pr2t(L_arrow(2,:),eye(3,3)),'subfig_idx',2,...
@@ -1519,7 +1534,7 @@ for tick = 1:len % for each tick
             'location','southeast','fontname','Consolas');
     end
     drawnow limitrate; 
-    
+    if ~ishandle(fig), break; end
 end
 
 fprintf('Done.\n');
@@ -1530,7 +1545,7 @@ ccc
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
 chain_model = get_chain_model_with_cache(model_name,...
     'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
-T = 0.01; chain_model.dt = T; % set time step
+T = 0.05; chain_model.dt = T; % set time step
 HZ = round(1/T); L = 1000;
 com_traj = nan*ones(HZ,3); zmp_traj = nan*ones(HZ,3); % remain 1sec
 
@@ -1550,7 +1565,6 @@ for tick = 1:L % for each tick
     q_rad_diff = mod(q_rad_diff+pi,2*pi)-pi;
     q_rad_prev = q_rad;
     
-    
     % Update forward dynamic properties
     joints = chain_model.rev_joint_names;
     chain_model = update_chain_dynamics(chain_model,joints,q_rad_diff,T);
@@ -1566,9 +1580,9 @@ for tick = 1:L % for each tick
     % Plot robot model and ZMP and COM projected on the ground
     com_traj(1:end-1) = com_traj(2:end); com_traj(end,:) = com_proj;
     zmp_traj(1:end-1) = zmp_traj(2:end); zmp_traj(end,:) = zmp;
-    title_str = sprintf('[%d/%d]',tick,L);
+    title_str = sprintf('[%d/%d] time:[%.2f]s',tick,L,sec);
     axis_info = [-1.0,+1.0,-1.0,+1.0,+0.0,+2.0];
-    plot_chain(chain_model,'axis_info',axis_info,...
+    fig = plot_chain(chain_model,'axis_info',axis_info,...
         'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
         'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.05,'w_rate',0.03,...
         'title_str',title_str,'view_info',[88,17]);
@@ -1595,10 +1609,9 @@ for tick = 1:L % for each tick
             'fontsize',25,'location','southeast','fontname','Consolas');
     end
     drawnow limitrate; 
-    
+    if ~ishandle(fig), break; end
 end
  
-
 fprintf('Done.\n');
 
 %% 36. Slider control 
@@ -1687,15 +1700,16 @@ h_dmu = plot(t_test,dmu_test,'-','linewidth',2,'Color','m');
 h_ddmu = plot(t_test,ddmu_test,'-','linewidth',2,'Color','c');
 legend([h_ref,h_anchor,h_mu,h_dmu,h_ddmu],{'Ref','Anchor','mu','d_mu','dd_mu'},'fontsize',15,...
     'interpreter','none');
+ylim([-1,+1]);
 
 %% 38. GRP sampling 
 ccc
 
 % Anchor points
-eps_ru = 0.0;
-t_anchor = [0,eps_ru,1/3,2/3,1.0-eps_ru,1.0]';
-x_anchor = [0,0,1.0,-1.0,0,0]';
-l_anchor = [1,1,1,1,1,1]';
+eps_ru = 0.01;
+t_anchor = [0,1/3,2/3,1.0]';
+x_anchor = [0,1.0,-1.0,0]';
+l_anchor = [1,1-0.1,1-0.5,1]';
 n_anchor = size(t_anchor,1);
 
 % Define GRP
@@ -1730,7 +1744,7 @@ fig = figure();
 set_fig_position(fig,'position',[0.0,0.4,0.5,0.4],'AXIS_EQUAL',0,'SET_DRAGZOOM',0,'AXES_LABEL',0);
 h_fill = fill([t_test;flipud(t_test)],[mu_test-2*std_test ;flipud(mu_test+2*std_test)],...
     'k','LineStyle',':'); % grp 2std
-set(h_fill,'FaceAlpha',0.1);
+set(h_fill,'FaceAlpha',0.2);
 colors = linspecer(n_path);
 for i_idx = 1:n_path
     sampled_path = sampled_paths(:,i_idx);
@@ -1761,7 +1775,7 @@ angle_G_line = angle(G_line);
 
 figure(1); hold on;
 colormap summer;
-surf(rho,w,norm_G,'linewidth',0.5,'FaceAlpha',0.5,'edgecolor','interp'); % 'edgecolor': 'none' or 'interp'
+surf(rho,w,norm_G,'linewidth',0.5,'FaceAlpha',0.5,'edgecolor','interp'); % 'edgecolor':'none'/'interp'
 plot3(rho_line,w_line,norm_G_line,'k-','linewidth',3);
 xlabel('\rho'); ylabel('w');
 view(155,26);
