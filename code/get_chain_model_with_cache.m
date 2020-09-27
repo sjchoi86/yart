@@ -41,10 +41,8 @@ else
         chain_model.link(i_idx).capsule = cap_opt_i;
     end
     
-    % Self-Collision Check
+    % Self-Collision check indices
     chain_model.sc_checks = get_sc_checks(chain_model);
-    
-    
     
     % Save
     save(cache_path,'chain_model');
@@ -52,7 +50,36 @@ else
 end
 
 
-
+%% Some post processing
+switch model_name
+    case 'social_robot'
+        
+        % base_link
+        p = chain_model.link(3).capsule.p;
+        R = chain_model.link(3).capsule.R;
+        radius = chain_model.link(3).capsule.radius;
+        height = chain_model.link(3).capsule.height;
+        res = 30;
+        radius = radius * 0.5;
+        height = height * 0.9;
+        cap = get_capsule_shape(p,R,radius,height,res);
+        chain_model.link(3).capsule = cap;
+        
+        % Waist_Pitch
+        p = chain_model.link(5).capsule.p;
+        R = chain_model.link(5).capsule.R;
+        radius = chain_model.link(5).capsule.radius;
+        height = chain_model.link(5).capsule.height;
+        res = 30;
+        radius = radius * 0.7;
+        height = height * 0.8;
+        cap = get_capsule_shape(p,R,radius,height,res);
+        chain_model.link(5).capsule = cap;
+        
+        % Self-Collision check indices
+        chain_model.sc_checks = get_sc_checks(chain_model);
+        
+end
 
 
 

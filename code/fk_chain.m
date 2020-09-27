@@ -35,9 +35,6 @@ if ~isempty(link_table)
     link_idx_to = find(link_table == idx_to); % the index of the link attached to `joint_to`
     
     if ~isempty(link_idx_to)
-        
-        
-        
         if ~isempty(chain.link(link_idx_to).bcube)
             % Center of Mass of each link represented in local joint coordinate system
             chain.joint(idx_to).com_local = chain.link(link_idx_to).bcube.c_offset;
@@ -47,8 +44,6 @@ if ~isempty(link_table)
             chain.link(link_idx_to).com = (chain.joint(idx_to).p + ...
                 chain.joint(idx_to).R * chain.joint(idx_to).com_local);
         end
-        
-        
     end
 end
 

@@ -9,7 +9,7 @@ ccc
 % 5. Plot 3D arrow and Rotate w.r.t. global-z
 % 6. Kinematic Chain and Forward Kinematics
 % 7. Get a Transformation Matrix from Three Points in 3D
-% 8. Plot Interactive Markers
+% 8. Plot Interactive Markersc
 % 9. Interpolate between Two Rotation Matrices, R1 and R2
 % 10. Load URDF and Generate a Kinemactic Chain
 % 11. Rodrigues' formula: get R from a constant angular velocity vector
@@ -359,7 +359,7 @@ end_vid_record(vid_obj);
 ccc
 
 % Which model to use
-model_name = 'coman'; % coman / panda / sawyer
+model_name = 'social_robot'; % coman / panda / sawyer / social_robot
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
 chain = get_chain_from_urdf(model_name,urdf_path);
 % Plot robot
@@ -471,7 +471,7 @@ end
 ccc
 
 % Get the kinematic chain of the model
-model_name = 'coman'; % coman / panda / sawyer
+model_name = 'social_robot'; % coman / panda / sawyer / social_robot
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
 chain = get_chain_from_urdf(model_name,urdf_path);
 
@@ -482,7 +482,7 @@ plot_chain_graph(chain);
 ccc
 
 % Get the kinematic chain of the model
-model_name = 'sawyer'; % coman / panda / sawyer
+model_name = 'panda'; % coman / panda / sawyer
 urdf_path = sprintf('../urdf/%s/%s_urdf.xml',model_name,model_name);
 chain = get_chain_from_urdf(model_name,urdf_path);
 
@@ -1436,7 +1436,7 @@ for tick = 2:L
     % Get JOI Positions of the Robot (pr: position of robot)
     [pr_root,pr_rs,pr_re,pr_rh,pr_ls,pr_le,pr_lh,pr_neck] = ...
         get_different_p_joi_robot_model(chain_model,joi_model);
-
+    
     % Plot the robot model
     title_str = sprintf('[%d/%d] [%s]-[%s]',tick,L,model_name,action_str);
     axis_info = [-inf,inf,-1.1,1.1,chain_model_sz.xyz_min(3),1.1];
@@ -1473,7 +1473,7 @@ end
 
 %% 34. Compute Linear/Angular Momentum
 ccc
-% Load model 
+% Load model
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
 chain_model = get_chain_model_with_cache(model_name,...
     'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
@@ -1521,10 +1521,10 @@ for tick = 1:len % for each tick
         h_P_arrow = plot3(P_arrow(:,1), P_arrow(:,2), P_arrow(:,3),'-', 'color','r','linewidth',3);
         h_L_arrow = plot3(L_arrow(:,1), L_arrow(:,2), L_arrow(:,3),'-', 'color','b','linewidth',3);
     else
-        h_P_arrow.XData = P_arrow(:,1); 
-        h_P_arrow.YData = P_arrow(:,2); 
+        h_P_arrow.XData = P_arrow(:,1);
+        h_P_arrow.YData = P_arrow(:,2);
         h_P_arrow.ZData = P_arrow(:,3);
-        h_L_arrow.XData = L_arrow(:,1); 
+        h_L_arrow.XData = L_arrow(:,1);
         h_L_arrow.YData = L_arrow(:,2);
         h_L_arrow.ZData = L_arrow(:,3);
     end
@@ -1533,7 +1533,7 @@ for tick = 1:len % for each tick
             'fontsize',25,'interpreter', 'latex',...
             'location','southeast','fontname','Consolas');
     end
-    drawnow limitrate; 
+    drawnow limitrate;
     if ~ishandle(fig), break; end
 end
 
@@ -1541,7 +1541,7 @@ fprintf('Done.\n');
 
 %% 35. Compute ZMP
 ccc
-% Load model 
+% Load model
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
 chain_model = get_chain_model_with_cache(model_name,...
     'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
@@ -1608,13 +1608,13 @@ for tick = 1:L % for each tick
         h_leg = legend([h_zmp,h_com],{'ZMP','COM'},...
             'fontsize',25,'location','southeast','fontname','Consolas');
     end
-    drawnow limitrate; 
+    drawnow limitrate;
     if ~ishandle(fig), break; end
 end
- 
+
 fprintf('Done.\n');
 
-%% 36. Slider control 
+%% 36. Slider control
 ccc
 
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
@@ -1633,7 +1633,7 @@ end
 chain_models = cell(1,L);
 for tick = 1:L
     chain_model = update_chain_q(chain_model,chain_model.rev_joint_names,degs_traj(tick,:));
-    chain_model = fk_chain(chain_model); 
+    chain_model = fk_chain(chain_model);
     chain_models{tick} = chain_model;
 end
 
@@ -1667,77 +1667,88 @@ fprintf('Done.\n');
 ccc
 
 % Reference data
-f_ref = @(x)(cos(x)); % reference function
+f_ref = @(x)( cos(x) ); % reference function
 t_max = 4*pi;
 t_ref = linspace(0,t_max,1000)';
 x_ref = f_ref(t_ref);
 
-% Anchor dataset (training data) 
-n_anchor = 100;
+% Anchor dataset (training data)
+n_anchor = 1000;
 t_anchor = linspace(0,t_max,n_anchor)';
-x_anchor = f_ref(t_anchor) + sqrt(0.0)*randn(size(t_anchor));
+noise_var = 1e-2;
+x_anchor = f_ref(t_anchor) + sqrt(noise_var)*randn(size(t_anchor));
+l_anchor = ones(n_anchor,1);
 
 % Gaussian random path
 n_test = 1000;
 t_test = linspace(0,t_max,n_test)';
 hyp = [1,1]; % [gain,len]
-[k_test,dk_test,ddk_test] = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
-K_anchor = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp);
+[k_test,dk_test,ddk_test] = kernel_levse(t_test,t_anchor,ones(n_test,1),l_anchor,hyp);
+K_anchor = kernel_levse(t_anchor,t_anchor,l_anchor,l_anchor,hyp);
 
 % Compute mu, d_mu, and dd_mu
-eps = 1e-8; % expected noise
-mu_test = k_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
-dmu_test = dk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
-ddmu_test = ddk_test / (K_anchor+eps*eye(n_anchor,n_anchor)) * x_anchor;
+meas_std = 1e-2; % expected noise
+mu_test = k_test / (K_anchor+meas_std*eye(n_anchor,n_anchor)) * x_anchor;
+dmu_test = dk_test / (K_anchor+meas_std*eye(n_anchor,n_anchor)) * x_anchor;
+ddmu_test = ddk_test / (K_anchor+meas_std*eye(n_anchor,n_anchor)) * x_anchor;
 
 % Plot
 fig = figure();
 set_fig_position(fig,'position',[0.0,0.4,0.5,0.4],'AXIS_EQUAL',0,'SET_DRAGZOOM',0);
-h_ref = plot(t_ref,x_ref,'k-','linewidth',1); 
 h_anchor = plot(t_anchor,x_anchor,'bo','linewidth',2,'markersize',15);
-h_mu = plot(t_test,mu_test,'b--','linewidth',4);
+h_ref = plot(t_ref,x_ref,'k-','linewidth',5);
+h_mu = plot(t_test,mu_test,'r--','linewidth',4);
 h_dmu = plot(t_test,dmu_test,'-','linewidth',2,'Color','m');
 h_ddmu = plot(t_test,ddmu_test,'-','linewidth',2,'Color','c');
 legend([h_ref,h_anchor,h_mu,h_dmu,h_ddmu],{'Ref','Anchor','mu','d_mu','dd_mu'},'fontsize',15,...
     'interpreter','none');
-ylim([-1,+1]);
+ylim([-1,+1]*1.5);
 
-%% 38. GRP sampling 
+%% 38. GRP sampling
 ccc
 
 % Anchor points
 eps_ru = 0.01;
 t_anchor = [0,1/3,2/3,1.0]';
-x_anchor = [0,1.0,-1.0,0]';
+x_anchor = [0,1.0,-1.0,3.0]';
 l_anchor = [1,1-0.1,1-0.5,1]';
-n_anchor = size(t_anchor,1);
 
-% Define GRP
+% Test data
 n_test = 1000;
 t_test = linspace(0,1,n_test)';
-hyp = [1,0.2]; % [gain,len]
+
+% Hyper parameters
+hyp_mu = [1,1.0]; % [gain,len]
+hyp_var = [1,0.2]; % [gain,len]
+
+
+% Add epsilon run-up
+[t_anchor,x_anchor,l_anchor] = add_eps_ru(t_anchor,x_anchor,l_anchor,eps_ru);
+n_anchor = size(t_anchor,1);
 
 % Compute GP mu and std
-k_test_mu = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp);
-K_anchor_mu = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp);
+k_test_mu = kernel_levse(t_test,t_anchor,ones(n_test,1),ones(n_anchor,1),hyp_mu);
+K_anchor_mu = kernel_levse(t_anchor,t_anchor,ones(n_anchor,1),ones(n_anchor,1),hyp_mu);
 eps_mu = 1e-8; % expected noise
 mu_test = k_test_mu / (K_anchor_mu+eps_mu*eye(n_anchor,n_anchor)) * x_anchor;
 
 % Sample trajectories from GRP
-k_test_var = kernel_levse(t_test,t_anchor,ones(n_test,1),l_anchor,hyp);
-K_anchor_var = kernel_levse(t_anchor,t_anchor,l_anchor,l_anchor,hyp);
-eps_var = 1e-6;
-var_test = diag(abs(hyp(1) - ...
+k_test_var = kernel_levse(t_test,t_anchor,ones(n_test,1),l_anchor,hyp_var);
+K_anchor_var = kernel_levse(t_anchor,t_anchor,l_anchor,l_anchor,hyp_var);
+eps_var = 1e-8;
+var_test = diag(abs(hyp_var(1) - ...
     k_test_var / (K_anchor_var+eps_var*eye(n_anchor,n_anchor)) * k_test_var'));
 std_test = sqrt(var_test);
-K_test = kernel_levse(t_test,t_test,ones(n_test,1),ones(n_test,1),hyp) - ...
+K_test = kernel_levse(t_test,t_test,ones(n_test,1),ones(n_test,1),hyp_var) - ...
     k_test_var / (K_anchor_var+eps_var*eye(n_anchor,n_anchor)) * k_test_var';
 K_test = 0.5*K_test + 0.5*K_test';
 K_max = max(K_test(:));
-chol_K = chol(K_test/K_max + 1e-6*eye(n_test,n_test),'lower');
+chol_K = chol(K_test/sqrt(K_max) + 1e-6*eye(n_test,n_test),'lower');
+
+% Sample GRP paths
 n_path = 100;
-randomness = randn(n_test,n_path); 
-sampled_paths = sqrt(K_max)*chol_K*randomness + mu_test;
+randomness = randn(n_test,n_path);
+sampled_trajs = sqrt(K_max)*chol_K*randomness + mu_test;
 
 % Plot
 fig = figure();
@@ -1747,13 +1758,13 @@ h_fill = fill([t_test;flipud(t_test)],[mu_test-2*std_test ;flipud(mu_test+2*std_
 set(h_fill,'FaceAlpha',0.2);
 colors = linspecer(n_path);
 for i_idx = 1:n_path
-    sampled_path = sampled_paths(:,i_idx);
+    sampled_traj = sampled_trajs(:,i_idx);
     color = colors(i_idx,:); % 0.4*[1,1,1];
-    plot(t_test,sampled_path,'-','linewidth',1.0,'color',color);
+    plot(t_test,sampled_traj,'-','linewidth',1.0,'color',color);
 end
 h_anchor = plot(t_anchor,x_anchor,'ko','linewidth',3,'markersize',15);
 h_mu = plot(t_test,mu_test,'k-','linewidth',4);
-legend([h_anchor,h_mu,h_fill],{'Data','GP mu','GP std'},'fontsize',20);
+legend([h_anchor,h_mu,h_fill],{'Data','GP mu','GP std'},'fontsize',20,'location','southeast');
 
 %% 39. Surface plot
 ccc
@@ -1780,7 +1791,163 @@ plot3(rho_line,w_line,norm_G_line,'k-','linewidth',3);
 xlabel('\rho'); ylabel('w');
 view(155,26);
 
+%% 40. GRP wrapper (1D case)
+ccc
+
+% Anchor points
+t_anchor = [0,1/3,2/3,1.0]';
+x_anchor = [0,1.0,-1.0,3.0]';
+l_anchor = [1,1-0.1,1-0.5,1]';
+eps_ru = 0.01;
+
+% Test data
+n_test = 1000;
+t_test = linspace(0,1,n_test)';
+
+% Hyper parameters
+hyp_mu = [1,1.0]; % [gain,len]
+hyp_var = [1,0.2]; % [gain,len]
+
+% Initialize GRP
+grp1d = init_grp1d(t_anchor,x_anchor,l_anchor,t_test,hyp_mu,hyp_var,'eps_ru',eps_ru);
+
+% Sample GRP paths
+n_path = 1;
+randomness = randn(n_test,n_path);
+sampled_trajs = sqrt(grp1d.K_max)*grp1d.chol_K*randomness + grp1d.mu_test;
+
+% Plot
+plot_grp1d(grp1d,sampled_trajs);
+
+%% 41. GRP vel estimator wrapper (1D case)
+ccc
+
+% Anchor points
+t_anchor = [0.0,2.0]'; % 2 second trajectory
+x_anchor = [2*rand-1,2*rand-1]';
+l_anchor = [1,1]';
+eps_ru = 0.02;
+
+% Test data
+n_test = 1000;
+t_test = linspace(0.0,2.0,n_test)';
+
+% Hyper parameters
+hyp_mu = [1,1.0]; % [gain,len]
+hyp_var = [0.5,0.5]; % [gain,len]
+
+% Initialize GRP
+grp1d = init_grp1d(t_anchor,x_anchor,l_anchor,t_test,hyp_mu,hyp_var,'eps_ru',eps_ru);
+
+% Sample GRP paths
+n_path = 10;
+randomness = randn(n_test,n_path);
+sampled_trajs = sqrt(grp1d.K_max)*grp1d.chol_K*randomness + grp1d.mu_test;
+
+% Compute the velocity of each sampled path
+for p_idx = 1:n_path
+    sampled_traj = sampled_trajs(:,p_idx); % get each path
+    [min_val,max_val,min_vel,max_vel,aa_vel] = ...
+        get_path_stats(t_test,sampled_traj);
+    
+    fprintf('[%02d/%d] val:[%.2f]~[%.2f] vel:[%.2f]~[%.2f] (aa:[%.2f]). \n',...
+        p_idx,n_path,min_val,max_val,min_vel,max_vel,aa_vel);
+end
+
+% Plot
+axis_info = [0,2,-2,+2];
+plot_grp1d(grp1d,sampled_trajs,'fig_idx',1,'lw_sample',2,'axis_info',axis_info);
+
+%% 42. Squash trajs
+ccc
+
+raw_traj = linspace(-10,10,1000)';
+
+% Plot with different margins
+fig = figure(1); set_fig_position(fig,'position',[0,0.5,0.3,0.5]);
+plot(raw_traj,raw_traj,'k-','linewidth',2);
+margins = [0.0,1.0,2.0,3.0,4.0,5.0];
+n_margin = length(margins);
+colors = linspecer(n_margin);
+min_vals = -4;
+max_vals = 2;
+for m_idx = 1:n_margin
+    margin = margins(m_idx);
+    squashed_traj = get_squashed_traj(raw_traj,min_vals,max_vals,margin);
+    hs(m_idx) = plot(raw_traj,squashed_traj,'-','linewidth',2,'color',colors(m_idx,:));
+    strs{m_idx} = sprintf('margin:[%.1f]',margin);
+end
+grid on; axis equal; axis ([-10,+10,-10,+10]);
+legend(hs,strs,'fontsize',15,'location','southeast');
+
+% Plot with different limits
+fig = figure(2); set_fig_position(fig,'position',[0.3,0.5,0.3,0.5]);
+plot(raw_traj,raw_traj,'k-','linewidth',2);
+limits = [1,2,3,4,5,6,7,8];
+n_limit = length(limits);
+colors = linspecer(n_limit);
+for m_idx = 1:n_limit
+    limit = limits(m_idx);
+    squashed_traj = get_squashed_traj(raw_traj,-limit,limit,1);
+    hs(m_idx) = plot(raw_traj,squashed_traj,'-','linewidth',2,'color',colors(m_idx,:));
+    strs{m_idx} = sprintf('limit:[%.1f]',limit);
+end
+grid on; axis equal; axis ([-10,+10,-10,+10]);
+legend(hs,strs,'fontsize',15,'location','southeast');
+
+%% 43. GRP sampling of Panda manipulator
+ccc
+
+% Load model
+model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
+chain_model = get_chain_model_with_cache(model_name,...
+    'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
+joi_model = get_joi_chain(chain_model);
+ws = get_ws_with_cache(chain_model,joi_model);
+chain_model_sz = get_chain_sz(chain_model);
+axis_info = get_axis_info_from_chain(ws,chain_model_sz);
+
+% Tracklet configuration
+t_sec = 2;
+HZ = 50;
+joint_vel_deg_max = 60; % deg/sec
+
+% Sample joint tracket with GRP
+[q_tracklet,chain_model1,chain_model2] = sample_q_tracklet_with_grp(...
+    chain_model,joi_model,t_sec,HZ,joint_vel_deg_max);
+
+% Animate the robot 
+title_str = '';
+plot_chain(chain_model1,'fig_idx',1,'subfig_idx',1,...
+    'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
+    'PLOT_LINK',0,'PLOT_CAPSULE',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,...
+    'mfc',0.9*[1,1,1],'mfa',0.1,'axis_info',axis_info);
+plot_chain(chain_model2,'fig_idx',1,'subfig_idx',2,...
+    'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
+    'PLOT_LINK',0,'PLOT_CAPSULE',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,...
+    'mfc',0.9*[1,1,1],'mfa',0.1,'axis_info',axis_info);
+for tick = 1:t_sec*HZ % for each tick 
+    q = q_tracklet(tick,:);
+    chain_model = update_chain_q(chain_model,chain_model.rev_joint_names,...
+        q,'IGNORE_LIMIT',0);
+    chain_model = fk_chain(chain_model); % forward kinematics
+    title_str = sprintf('[%d/%d] [%.2f]sec',tick,t_sec*HZ,tick/HZ);
+    plot_chain(chain_model,'fig_idx',1,'subfig_idx',3,...
+        'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
+        'PLOT_LINK',0,'PLOT_CAPSULE',0,'axis_info',axis_info);
+    drawnow limitrate;
+end
+drawnow;
+
 %%
+
+
+
+
+
+
+
+
 
 
 

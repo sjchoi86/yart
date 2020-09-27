@@ -56,7 +56,7 @@ addParameter(p,'jnfs',15); % joint name font size
 addParameter(p,'jnfn','consolas'); % joint name font name
 addParameter(p,'jnfc','k'); % joint name font color
 
-addParameter(p,'PLOT_CAPSULE',false); % plot link capsule
+addParameter(p,'PLOT_CAPSULE',true); % plot link capsule
 addParameter(p,'cfc',0.5*[1,1,1]); % capsule face color
 addParameter(p,'cfa',0.4); % capsule face alpha
 addParameter(p,'cec','none'); % capsule edge color
@@ -357,7 +357,7 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
     end
     
     % Plot Capsule
-    if PLOT_CAPSULE
+    if PLOT_CAPSULE && isfield(chain,'n_link')
         for i_idx = 1:chain.n_link
             link_i = chain.link(i_idx);
             if ~isempty(link_i.capsule)
@@ -539,7 +539,7 @@ else
     end
     
     % Plot Capsule
-    if PLOT_CAPSULE
+    if PLOT_CAPSULE && isfield(chain,'n_link')
         for i_idx = 1:chain.n_link
             link_i = chain.link(i_idx);
             if ~isempty(link_i.capsule)

@@ -50,6 +50,9 @@ switch lower(chain.name)
     case 'sawyer'
         joi_types = {'root','ee','rh','lh'}; 
         joi_idxs = [2,18,18,18];
+    case 'social_robot'
+        joi_types = {'rh','re','rs','lh','le','ls','head','root'}; % hand, elbow, shoulder, head
+        joi_idxs = [22,20,18,12,10,8,5,3];
     case 'theo'
         joi_types = {'rh','re','rs','lh','le','ls',... 
             'root','head'}; 

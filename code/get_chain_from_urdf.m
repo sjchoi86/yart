@@ -53,6 +53,11 @@ for i_idx = 1:chain.n_joint
     chain.joint(i_idx).limit = limit;
     % Joint offset
     chain.joint(i_idx).p_offset = str2num(joint_i.origin.Attributes.xyz)';
+    
+    if isequal(chain.joint(i_idx).name,'world_fixed')
+        chain.joint(i_idx).p = chain.joint(i_idx).p_offset;
+    end
+    
     chain.joint(i_idx).R_offset = rpy2r(str2num(joint_i.origin.Attributes.rpy));
     % Parent and child links
     chain.joint(i_idx).parent_link = joint_i.parent.Attributes.link;
@@ -120,6 +125,8 @@ for i_idx = 1:chain.n_link
             otherwise
                 fprintf(2,'Unsupported file type:[%s].\n',ext);
         end
+    else
+        % chain.link(i_idx).mesh_path
     end
     
     % Get CAD Bounding Cube
