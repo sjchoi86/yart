@@ -98,10 +98,10 @@ end % for i_idx = 1:length(model_names) % for all robot models
 ccc
 
 % Configuration
-SAVE_VID = 1;
+SAVE_VID = 0;
 
 % Get the Robot Model
-model_name = 'social_robot'; % atlas / baxter / coman / social_robot
+model_name = 'coman'; % atlas / baxter / coman / social_robot
 [chain_model,chain_model_sz,joi_model,ws,jnames_ctrl] = ...
     get_robot_model_information_for_motion_retargeting(model_name);
 

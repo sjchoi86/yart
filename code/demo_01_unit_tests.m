@@ -1545,14 +1545,15 @@ ccc
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
 chain_model = get_chain_model_with_cache(model_name,...
     'RE',0,'cache_folder','../cache','urdf_folder','../urdf');
-T = 0.05; chain_model.dt = T; % set time step
+T = 0.01; chain_model.dt = T; % set time step
 HZ = round(1/T); L = 1000;
+w = 10*pi/L; % angular vel
 com_traj = nan*ones(HZ,3); zmp_traj = nan*ones(HZ,3); % remain 1sec
 
 for tick = 1:L % for each tick
     
     % Update model, dynamics and ZMP
-    sec = tick * T; w = 10*pi/L;
+    sec = tick * T; 
     chain_model = update_chain_q(chain_model,{'joint1','joint2','joint3'},...
         [mod(90*D2R*(w*tick),2*pi),90*D2R + 0*D2R*cos(w*tick),0*D2R*cos(w*tick)],...
         'IGNORE_LIMIT',1);
@@ -1583,7 +1584,7 @@ for tick = 1:L % for each tick
     title_str = sprintf('[%d/%d] time:[%.2f]s',tick,L,sec);
     axis_info = [-1.0,+1.0,-1.0,+1.0,+0.0,+2.0];
     fig = plot_chain(chain_model,'axis_info',axis_info,...
-        'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,...
+        'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_BCUBE',0,'PLOT_COM',1,'PLOT_CAPSULE',0,...
         'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PLOT_VELOCITY',1,'v_rate',0.05,'w_rate',0.03,...
         'title_str',title_str,'view_info',[88,17]);
     sr = chain_model.xyz_len(3)/30;
@@ -1673,21 +1674,21 @@ t_ref = linspace(0,t_max,1000)';
 x_ref = f_ref(t_ref);
 
 % Anchor dataset (training data)
-n_anchor = 1000;
+n_anchor = 20;
 t_anchor = linspace(0,t_max,n_anchor)';
-noise_var = 1e-2;
+noise_var = 0e-2;
 x_anchor = f_ref(t_anchor) + sqrt(noise_var)*randn(size(t_anchor));
 l_anchor = ones(n_anchor,1);
 
 % Gaussian random path
 n_test = 1000;
 t_test = linspace(0,t_max,n_test)';
-hyp = [1,1]; % [gain,len]
+hyp = [1,2]; % [gain,len]
 [k_test,dk_test,ddk_test] = kernel_levse(t_test,t_anchor,ones(n_test,1),l_anchor,hyp);
 K_anchor = kernel_levse(t_anchor,t_anchor,l_anchor,l_anchor,hyp);
 
 % Compute mu, d_mu, and dd_mu
-meas_std = 1e-2; % expected noise
+meas_std = 1e-1; % expected noise
 mu_test = k_test / (K_anchor+meas_std*eye(n_anchor,n_anchor)) * x_anchor;
 dmu_test = dk_test / (K_anchor+meas_std*eye(n_anchor,n_anchor)) * x_anchor;
 ddmu_test = ddk_test / (K_anchor+meas_std*eye(n_anchor,n_anchor)) * x_anchor;
@@ -1719,7 +1720,7 @@ t_test = linspace(0,1,n_test)';
 
 % Hyper parameters
 hyp_mu = [1,1.0]; % [gain,len]
-hyp_var = [1,0.2]; % [gain,len]
+hyp_var = [1,0.1]; % [gain,len]
 
 
 % Add epsilon run-up
@@ -1917,6 +1918,7 @@ joint_vel_deg_max = 60; % deg/sec
     chain_model,joi_model,t_sec,HZ,joint_vel_deg_max);
 
 % Animate the robot 
+vid_obj = init_vid_record('../vid/unit_test/ut43_grp_tracklet_panda.mp4','HZ',HZ,'SAVE_VID',1);
 title_str = '';
 plot_chain(chain_model1,'fig_idx',1,'subfig_idx',1,...
     'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
@@ -1935,11 +1937,21 @@ for tick = 1:t_sec*HZ % for each tick
     plot_chain(chain_model,'fig_idx',1,'subfig_idx',3,...
         'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
         'PLOT_LINK',0,'PLOT_CAPSULE',0,'axis_info',axis_info);
-    drawnow limitrate;
+    drawnow; record_vid(vid_obj);
 end
 drawnow;
+end_vid_record(vid_obj);
 
 %%
+
+
+
+
+
+
+
+
+
 
 
 
