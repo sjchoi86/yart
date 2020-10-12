@@ -9,7 +9,7 @@ while true
     q = joint_limits.min + joint_limits.range.*rand(1,joint_limits.n);
     
     % Update model and check self-collision
-    chain_model = update_chain_q(chain_model,chain_model.rev_joint_names,...
+    chain_model = update_chain_q(chain_model,joint2use,...
         q,'IGNORE_LIMIT',0);
     chain_model = fk_chain(chain_model); % forward kinematics
     SC = check_sc(chain_model);

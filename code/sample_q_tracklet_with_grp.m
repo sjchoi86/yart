@@ -1,12 +1,11 @@
 function [q_tracklet,chain_model1,chain_model2] = sample_q_tracklet_with_grp(...
-    chain_model,joi_model,t_sec,HZ,joint_vel_deg_max)
+    chain_model,joi_model,joint2use,t_sec,HZ,joint_vel_deg_max)
 %
 % Sample q_tracklet with GRP
 %
 
 
 % Get two collision-free poses
-joint2use = chain_model.rev_joint_names; % joints to use
 joint_limits = get_joint_limits(chain_model,joint2use); % joint limit info
 [q1,chain_model1] = get_collision_free_random_pose(chain_model,joi_model,joint2use);
 [q2,chain_model2] = get_collision_free_random_pose(chain_model,joi_model,joint2use); 
@@ -14,7 +13,7 @@ joint_limits = get_joint_limits(chain_model,joint2use); % joint limit info
 % Trim q2 based on linear interpolation
 too_fast_rate = max(abs(q2-q1)*180/pi/t_sec/joint_vel_deg_max);
 q2 = q1 + (q2-q1)/too_fast_rate;
-chain_model2 = update_chain_q(chain_model2,chain_model2.rev_joint_names,...
+chain_model2 = update_chain_q(chain_model2,joint2use,...
     q2,'IGNORE_LIMIT',0);
 chain_model2 = fk_chain(chain_model2); % forward kinematics
 

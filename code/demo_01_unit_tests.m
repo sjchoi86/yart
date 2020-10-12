@@ -1899,6 +1899,8 @@ legend(hs,strs,'fontsize',15,'location','southeast');
 %% 43. GRP sampling of Panda manipulator
 ccc
 
+SAVE_VID = 0;
+
 % Load model
 model_name = 'panda'; % atlas / baxter / coman / panda / sawyer
 chain_model = get_chain_model_with_cache(model_name,...
@@ -1911,14 +1913,18 @@ axis_info = get_axis_info_from_chain(ws,chain_model_sz);
 % Tracklet configuration
 t_sec = 2;
 HZ = 50;
-joint_vel_deg_max = 60; % deg/sec
+joint_vel_deg_max = 60; % deg/sec 
 
 % Sample joint tracket with GRP
+joint2use = chain_model.rev_joint_names; % joints to use
+joint2use = {'joint1','joint2'};
 [q_tracklet,chain_model1,chain_model2] = sample_q_tracklet_with_grp(...
-    chain_model,joi_model,t_sec,HZ,joint_vel_deg_max);
+    chain_model,joi_model,joint2use,t_sec,HZ,joint_vel_deg_max);
 
 % Animate the robot 
-vid_obj = init_vid_record('../vid/unit_test/ut43_grp_tracklet_panda.mp4','HZ',HZ,'SAVE_VID',1);
+if SAVE_VID
+    vid_obj = init_vid_record('../vid/unit_test/ut43_grp_tracklet_panda.mp4','HZ',HZ,'SAVE_VID',1);
+end
 title_str = '';
 plot_chain(chain_model1,'fig_idx',1,'subfig_idx',1,...
     'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
@@ -1930,17 +1936,22 @@ plot_chain(chain_model2,'fig_idx',1,'subfig_idx',2,...
     'mfc',0.9*[1,1,1],'mfa',0.1,'axis_info',axis_info);
 for tick = 1:t_sec*HZ % for each tick 
     q = q_tracklet(tick,:);
-    chain_model = update_chain_q(chain_model,chain_model.rev_joint_names,...
+    chain_model = update_chain_q(chain_model,joint2use,...
         q,'IGNORE_LIMIT',0);
     chain_model = fk_chain(chain_model); % forward kinematics
     title_str = sprintf('[%d/%d] [%.2f]sec',tick,t_sec*HZ,tick/HZ);
     plot_chain(chain_model,'fig_idx',1,'subfig_idx',3,...
         'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
         'PLOT_LINK',0,'PLOT_CAPSULE',0,'axis_info',axis_info);
-    drawnow; record_vid(vid_obj);
+    drawnow; 
+    if SAVE_VID
+        record_vid(vid_obj);
+    end
 end
 drawnow;
-end_vid_record(vid_obj);
+if SAVE_VID
+    end_vid_record(vid_obj);
+end
 
 %%
 
