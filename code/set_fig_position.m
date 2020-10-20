@@ -12,12 +12,15 @@ if isempty(h), for i = 1:10,h{i}.first_flag = true; end; end
 p = inputParser;
 addParameter(p,'position',[0.0,0.5,0.3,0.5]);
 addParameter(p,'ADD_TOOLBAR',1);
+addParameter(p,'DISABLE_TOOLBAR',1);
 addParameter(p,'AXIS_EQUAL',1);
 addParameter(p,'AXES_LABEL',1);
 addParameter(p,'view_info','');
 addParameter(p,'axis_info','');
 addParameter(p,'SET_DRAGZOOM',1);
 addParameter(p,'GRID_ON',1);
+addParameter(p,'HOLD_ON',1);
+addParameter(p,'SET_LIGHT',1);
 addParameter(p,'MULTIPLE_MONITOR',0); % handling multiple-monitors
 addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors case
 addParameter(p,'SET_BG_WHITE',1);
@@ -30,12 +33,15 @@ addParameter(p,'ym','');
 parse(p,varargin{:});
 position = p.Results.position;
 ADD_TOOLBAR = p.Results.ADD_TOOLBAR;
+DISABLE_TOOLBAR = p.Results.DISABLE_TOOLBAR;
 AXIS_EQUAL = p.Results.AXIS_EQUAL;
 AXES_LABEL = p.Results.AXES_LABEL;
 view_info = p.Results.view_info;
 axis_info = p.Results.axis_info;
 SET_DRAGZOOM = p.Results.SET_DRAGZOOM;
 GRID_ON = p.Results.GRID_ON;
+HOLD_ON = p.Results.HOLD_ON;
+SET_LIGHT = p.Results.SET_LIGHT;
 MULTIPLE_MONITOR = p.Results.MULTIPLE_MONITOR;
 monitor_idx = p.Results.monitor_idx;
 SET_BG_WHITE = p.Results.SET_BG_WHITE;
@@ -76,8 +82,10 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
     end
     
     % Disable toolbar at the upper right of axes
-    ax = gca;
-    ax.Toolbar = [];
+    if DISABLE_TOOLBAR
+        ax = gca;
+        ax.Toolbar = [];
+    end
     
     % Axis equal
     if AXIS_EQUAL
@@ -112,10 +120,14 @@ if h{fig.Number}.first_flag || ~ishandle(h{fig.Number}.fig)
     end
     
     % Hold on
-    hold on;
+    if HOLD_ON
+        hold on;
+    end
     
     % Cam light
-    camlight('infinite'); material('dull'); % cam light
+    if SET_LIGHT
+        camlight('infinite'); material('dull'); % cam light
+    end
     
     % Make BG While
     if SET_BG_WHITE

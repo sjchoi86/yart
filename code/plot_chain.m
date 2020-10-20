@@ -18,6 +18,7 @@ p = inputParser;
 addParameter(p,'fig_idx',1);
 addParameter(p,'subfig_idx',1);
 addParameter(p,'fig_pos',[0.0,0.4,0.35,0.5]); % figure position
+addParameter(p,'GRID_ON',1);
 addParameter(p,'MULTIPLE_MONITOR',0); % handling multiple-monitors
 addParameter(p,'monitor_idx',1); % index of the monitor in multiple-monitors case
 addParameter(p,'view_info',[80,16]);
@@ -26,7 +27,7 @@ addParameter(p,'PLOT_MESH',true);
 addParameter(p,'mfc',0.5*[1,1,1]); % mesh face color
 addParameter(p,'mfa',0.4); % mesh face alpha
 addParameter(p,'bfc',0.5*[1,1,1]); % box face color
-addParameter(p,'bfa',0.5); % box face alpha
+addParameter(p,'bfa',0.8); % box face alpha
 addParameter(p,'PLOT_BCUBE',false);
 addParameter(p,'PLOT_COM',false);
 addParameter(p,'PLOT_LINK',true);
@@ -73,6 +74,7 @@ parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;
 fig_pos = p.Results.fig_pos;
+GRID_ON = p.Results.GRID_ON;
 MULTIPLE_MONITOR = p.Results.MULTIPLE_MONITOR;
 monitor_idx = p.Results.monitor_idx;
 view_info = p.Results.view_info;
@@ -133,7 +135,7 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
     % Make figure
     set_fig_position(h{fig_idx,subfig_idx}.fig,...
         'position',fig_pos,'ADD_TOOLBAR',1,'AXES_LABEL',1,...
-        'view_info',view_info,'axis_info',axis_info,'SET_DRAGZOOM',1,'GRID_ON',1,...
+        'view_info',view_info,'axis_info',axis_info,'SET_DRAGZOOM',1,'GRID_ON',GRID_ON,...
         'MULTIPLE_MONITOR',MULTIPLE_MONITOR,'monitor_idx',monitor_idx,...
         'xm',xm,'ym',ym);
     
@@ -366,7 +368,6 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
                 joint_idx = link_i.joint_idx;
                 p_link = chain.joint(joint_idx).p;
                 R_link = chain.joint(joint_idx).R;
-                
                 
                 h{fig_idx,subfig_idx}.cap_patch{i_idx} = ...
                     patch('faces',cap.faces,'vertices',cap.vertices,...

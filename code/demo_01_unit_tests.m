@@ -1553,7 +1553,7 @@ com_traj = nan*ones(HZ,3); zmp_traj = nan*ones(HZ,3); % remain 1sec
 for tick = 1:L % for each tick
     
     % Update model, dynamics and ZMP
-    sec = tick * T; 
+    sec = tick * T;
     chain_model = update_chain_q(chain_model,{'joint1','joint2','joint3'},...
         [mod(90*D2R*(w*tick),2*pi),90*D2R + 0*D2R*cos(w*tick),0*D2R*cos(w*tick)],...
         'IGNORE_LIMIT',1);
@@ -1913,7 +1913,7 @@ axis_info = get_axis_info_from_chain(ws,chain_model_sz);
 % Tracklet configuration
 t_sec = 2;
 HZ = 50;
-joint_vel_deg_max = 60; % deg/sec 
+joint_vel_deg_max = 60; % deg/sec
 
 % Sample joint tracket with GRP
 joint2use = chain_model.rev_joint_names; % joints to use
@@ -1921,7 +1921,7 @@ joint2use = {'joint1','joint2'};
 [q_tracklet,chain_model1,chain_model2] = sample_q_tracklet_with_grp(...
     chain_model,joi_model,joint2use,t_sec,HZ,joint_vel_deg_max);
 
-% Animate the robot 
+% Animate the robot
 if SAVE_VID
     vid_obj = init_vid_record('../vid/unit_test/ut43_grp_tracklet_panda.mp4','HZ',HZ,'SAVE_VID',1);
 end
@@ -1934,7 +1934,7 @@ plot_chain(chain_model2,'fig_idx',1,'subfig_idx',2,...
     'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
     'PLOT_LINK',0,'PLOT_CAPSULE',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,...
     'mfc',0.9*[1,1,1],'mfa',0.1,'axis_info',axis_info);
-for tick = 1:t_sec*HZ % for each tick 
+for tick = 1:t_sec*HZ % for each tick
     q = q_tracklet(tick,:);
     chain_model = update_chain_q(chain_model,joint2use,...
         q,'IGNORE_LIMIT',0);
@@ -1943,7 +1943,7 @@ for tick = 1:t_sec*HZ % for each tick
     plot_chain(chain_model,'fig_idx',1,'subfig_idx',3,...
         'fig_pos',[0.0,0.1,0.6,0.9],'title_str',title_str,...
         'PLOT_LINK',0,'PLOT_CAPSULE',0,'axis_info',axis_info);
-    drawnow; 
+    drawnow;
     if SAVE_VID
         record_vid(vid_obj);
     end
@@ -1953,33 +1953,57 @@ if SAVE_VID
     end_vid_record(vid_obj);
 end
 
+%% 44. s(t) function parametrization with Normalized Wahba-type spline model
+ccc
+
+n_sample = 20;
+sts = cell(1,n_sample);
+for s_idx = 1:n_sample
+    n_anchor = 7; range = 2; % Anchor points
+    x_anchor = -range+2*range*rand(n_anchor,1); x_anchor(1)=0.0; x_anchor(end)=0.0;
+    [st,t_test] = get_st_graph(x_anchor); % Get s(t)
+    sts{s_idx} = st; % append
+end
+
+% Plot
+fig = figure(1);
+set_fig_position(fig,'position',[0.0,0.5,0.3,0.5],'AXIS_EQUAL',0,'SET_DRAGZOOM',0,'AXES_LABEL',0);
+colors = linspecer(n_sample);
+for s_idx = 1:n_sample
+    st = sts{s_idx};
+    color = colors(s_idx,:);
+    plot(t_test,st,'-','linewidth',1,'Color',color);
+end
+axis equal;
+
+%% 45. Invsere mapping from s(t) to w(t)
+ccc
+
+% Sample s(t)
+rng(1);
+n_anchor = 7; range = 2; % Anchor points
+x_anchor = -range+2*range*rand(n_anchor,1); x_anchor(1)=0.0; x_anchor(end)=0.0;
+[st,t_test] = get_st_graph(x_anchor); % Get s(t)
+
+% Find corresponding w(t)
+w = get_w_from_st(st);
+
+% Then, find s2(t) from w(t)
+n_anchor2 = 10;
+idxs = round(linspace(1,length(t_test),n_anchor2));
+x_anchor2 = w(idxs);
+[st2,t_test] = get_st_graph(x_anchor2); % Get s(t)
+
+% Plot s(t)
+set_fig_position(figure(1),'position',[0.0,0.5,0.3,0.5],...
+    'AXIS_EQUAL',0,'SET_DRAGZOOM',0,'AXES_LABEL',0);
+hs = plot(t_test,st,'-','linewidth',2,'Color','g');
+hsr = plot(t_test,st2,':','linewidth',2,'Color','r');
+legend([hs,hsr],{'s(t)','Reconstructed s(t)'},...
+    'fontsize',15,'location','southeast');
+axis equal; axis([0,1,0,1]);
+
 %%
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
