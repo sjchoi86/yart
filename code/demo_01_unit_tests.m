@@ -2004,7 +2004,58 @@ legend([hs,hsr],{'s(t)','Reconstructed s(t)'},...
     'fontsize',15,'location','southeast');
 axis equal; axis([0,1,0,1]);
 
+%% 46. Check the mapping from s(t) to w(t) using real data
+ccc
+
+mat_path = '../data/plot_st_with_data_panda_alphred/panda_01.mat'; % alphred/panda
+l = load(mat_path);
+n = size(l.s_mid_save,3);
+
+for i_idx = 1:n % for all s(t)
+    % Load the original s(t)
+    st_i = l.s_mid_save(:,:,i_idx);
+    st_i = [st_i, 1.0];
+    t_i = l.t_mod_save(:,:,i_idx);
+    t_i = [0.0,t_i];
+    t_i = t_i / t_i(end);
+    
+    % Get feature
+    w_i = get_w_from_st(st_i');
+    n_anchor = 20;
+    idxs = round(linspace(1,length(t_i),n_anchor));
+    x_anchor = w_i(idxs);
+    
+    % Reconstruct s(t)
+    [st2_i,t_test] = get_st_graph(x_anchor); % Get s(t)
+    
+    % Plot
+    hold on;
+    horg = plot(t_i,st_i,'r-');
+    hfit = plot(t_i,st2_i,'b--','linewidth',1); 
+end
+axis equal; axis([0,1,0,1]); grid on; 
+legend([horg,hfit],{'Original s(t)','Fitted s(t)'},...
+    'fontsize',18,'location','southeast');
+title(sprintf('%s',mat_path),'fontsize',20,'interpreter','none');
+
 %%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
