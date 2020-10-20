@@ -1980,7 +1980,6 @@ axis equal;
 ccc
 
 % Sample s(t)
-rng(1);
 n_anchor = 7; range = 2; % Anchor points
 x_anchor = -range+2*range*rand(n_anchor,1); x_anchor(1)=0.0; x_anchor(end)=0.0;
 [st,t_test] = get_st_graph(x_anchor); % Get s(t)
@@ -1988,10 +1987,12 @@ x_anchor = -range+2*range*rand(n_anchor,1); x_anchor(1)=0.0; x_anchor(end)=0.0;
 % Find corresponding w(t)
 w = get_w_from_st(st);
 
-% Then, find s2(t) from w(t)
+% Find the anchor (representation)
 n_anchor2 = 10;
 idxs = round(linspace(1,length(t_test),n_anchor2));
 x_anchor2 = w(idxs);
+
+% Reconstruct s(t)
 [st2,t_test] = get_st_graph(x_anchor2); % Get s(t)
 
 % Plot s(t)
