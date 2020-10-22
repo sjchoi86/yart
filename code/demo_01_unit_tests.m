@@ -2050,7 +2050,7 @@ title(sprintf('%s',mat_path),'fontsize',20,'interpreter','none');
 ccc
 
 % Configuration
-ANIMATE = 0;
+ANIMATE = 1;
 
 % Select one MoCap file
 mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
@@ -2071,10 +2071,11 @@ for m_idx = m_list % for all mocaps
     
     % Animate to check
     if ANIMATE
+        L = length(chains_mocap);
         for tick = 1:L
             chain_mocap = chains_mocap{tick};
             plot_chain(chain_mocap,'title_str',sprintf('[%d/%d]',tick,L));
-            drawnow;
+            drawnow limitrate;
         end
     end
 end % for m_idx = 1:n_mocap % for all mocaps
