@@ -41,6 +41,14 @@ ccc
 % 37. Get mu, d_mu, and dd_mu of GRP
 % 38. GRP sampling
 % 39. Surface plot
+% 40. GRP wrapper
+% 41. GRP vel estimator
+% 42. Squash trajs
+% 43. GRP sampling of Panda
+% 44. s(t) function
+% 45. Inverse mapping from s(t)
+% 46. Check the mapping from s(t) to w(t) using real data
+% 47. Cache motion capture (MoCap) data 
 %
 %% 1. Make figures with different positions
 ccc
@@ -2038,15 +2046,43 @@ legend([horg,hfit],{'Original s(t)','Fitted s(t)'},...
     'fontsize',18,'location','southeast');
 title(sprintf('%s',mat_path),'fontsize',20,'interpreter','none');
 
+%% 47. Cache motion capture (MoCap) data 
+ccc
+
+% Configuration
+ANIMATE = 0;
+
+% Select one MoCap file
+mocap_infos = get_bvh_infos('mocap_folder','../../cmu-mocap/');
+n_mocap = length(mocap_infos);
+fprintf('We have [%d] mocaps.\n',n_mocap);
+% m_list = 1:n_mocap; % parse all mocap. CAUTION: it will use too much memory. 
+m_list = [123,126,433,435,436,437,438,439,440,441,442,443,444,480,481,488,...
+    1104,1116,1118,1123,1124,1125,1126,1127,1192,1208,1920];
+
+cnt = 0;
+for m_idx = m_list % for all mocaps
+    cnt = cnt + 1;
+    m = mocap_infos(m_idx);
+    fprintf('[%d/%d] [%s]-[%s].\n',cnt,length(m_list),m.subject,m.action);
+    
+    % Load with Caching
+    [chains_mocap,joi_mocap,skeleton,time] = get_chains_mocap_with_cache(m,'RE',0);
+    
+    % Animate to check
+    if ANIMATE
+        for tick = 1:L
+            chain_mocap = chains_mocap{tick};
+            plot_chain(chain_mocap,'title_str',sprintf('[%d/%d]',tick,L));
+            drawnow;
+        end
+    end
+end % for m_idx = 1:n_mocap % for all mocaps
+
+fprintf('Done.\n'); 
+
+
 %%
-
-
-
-
-
-
-
-
 
 
 

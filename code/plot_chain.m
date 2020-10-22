@@ -261,7 +261,7 @@ if h{fig_idx,subfig_idx}.first_flag || (~ishandle(h{fig_idx,subfig_idx}.fig))
             R = joint_i.R;
             ex = R(:,1); ey = R(:,2); ez = R(:,3);
             
-            if PLOT_ROTATE_AXIS
+            if PLOT_ROTATE_AXIS && isfield(joint_i,'a')
                 a = joint_i.a; % axis
                 if sum(a) ~= 0
                     axis_i = R*a;
@@ -467,7 +467,7 @@ else
             p = joint_i.p;
             R = joint_i.R;
             ex = R(:,1); ey = R(:,2); ez = R(:,3);
-            if PLOT_ROTATE_AXIS
+            if PLOT_ROTATE_AXIS && isfield(joint_i,'a')
                 a = joint_i.a; % axis
                 if sum(a) ~= 0
                     axis_i = R*a;
