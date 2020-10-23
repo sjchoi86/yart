@@ -1,28 +1,33 @@
-function [st,t_test] = get_st_graph(x_anchor)
+function [st,t_test] = get_st_graph(x_anchor, varargin)
 %
 % Get st (i.e., s(t))
 %
-
+if size(varargin,1) == 0
+    n_test = 1000;
+    t_test = linspace(0,1,n_test)';
+end
+if size(varargin,2) > 0
+    n_test = varargin{1};
+end
+if size(varargin,2) > 1
+    t_test = varargin{2}';
+end
 n_anchor = size(x_anchor,1);
 t_anchor = linspace(0,1,n_anchor)';
 l_anchor = ones(n_anchor,1);
-
 % Epsilon runup
 % eps_ru = 0.01;
 eps_ru = ''; % no epsilon runup
-
 % Test data
-n_test = 1000;
-t_test = linspace(0,1,n_test)';
-
+n_test = n_test;
+t_test = t_test;
 % Hyper parameters
 hyp_mu = [1,0.1]; % [gain,len]
 hyp_var = [0.1,1.0]; % [gain,len]
-
 % Initialize GRP
-grp1d = init_grp1d(t_anchor,x_anchor,l_anchor,t_test,hyp_mu,hyp_var,'eps_ru',eps_ru);
+grp1d = init_grp1d(t_anchor,x_anchor,l_anchor,t_test,hyp_mu,hyp_var,'eps_ru',eps_ru,...
+                   'meas_noise_std',1e-8);
 % plot_grp1d(grp1d,'','fig_pos',[0.0,0.7,0.5,0.3]);
-
 % Get phase
 W = grp1d.mu_test;
 E = exp(W);
