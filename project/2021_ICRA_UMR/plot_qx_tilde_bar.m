@@ -1,0 +1,39 @@
+function plot_qx_tilde_bar(chain_model_tilde,chain_model_bar,joi_tilde,joi_bar,...
+    fig_idx,fig_pos,view_info,axis_info)
+%
+% Plot robots with q_tilde and q_bar and skeletons with x_tilde and x_bar
+%
+
+% Margin
+xm = 0.15; ym = 0.1;
+
+% q_tilde
+plot_chain(chain_model_tilde,'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
+    'view_info',view_info,'axis_info',axis_info,...
+    'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,...
+    'PLOT_CAPSULE',0,...
+    'mfc',[0.9,0.3,0.3],'mfa',0.6,'xm',xm,'ym',ym);
+
+% q_bar
+chain_model_bar.joint(get_topmost_idx(chain_model_bar)).p(2) = 1.0;
+chain_model_bar = fk_chain(chain_model_bar);
+plot_chain(chain_model_bar,'fig_idx',fig_idx,'subfig_idx',2,...
+    'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,...
+    'PLOT_CAPSULE',0,...
+    'mfc',0.4*[1,1,1],'mfa',0.5);
+
+% x_tlide
+sr = chain_model_tilde.xyz_len(3)/30;
+p_offset = [0,2,0];
+plot_spheres(joi_tilde+p_offset,'fig_idx',fig_idx,'subfig_idx',1,...
+    'sr',sr,'sfc',0.9*[1,0,0],'sfa',0.7);
+plot_skeleton_from_joi(joi_tilde+p_offset,'fig_idx',fig_idx,'subfig_idx',1,...
+    'color',0.9*[1,0,0],'lw',3);
+
+% x_bar
+p_offset = [0,3,0];
+plot_spheres(joi_bar+p_offset,'fig_idx',fig_idx,'subfig_idx',2,...
+    'sr',sr,'sfc',0.3*[1,1,1],'sfa',0.7);
+plot_skeleton_from_joi(joi_bar+p_offset,'fig_idx',fig_idx,'subfig_idx',2,...
+    'color',0.3*[1,1,1],'lw',3);
+
