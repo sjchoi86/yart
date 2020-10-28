@@ -1,8 +1,13 @@
-function [ik,chain,q,LIMBO] = onestep_ik(ik,chain,q)
+function [ik,chain,q,LIMBO] = onestep_ik(ik,chain,q,IGNORE_LIMIT)
 %
 % Run one-step IK
 %
 global TIME_PROFILING;
+
+if nargin == 3
+    IGNORE_LIMIT = 0;
+end
+
 D2R = pi/180;
 ik.tick = ik.tick + 1; % increase tick
 ems = [];
@@ -51,19 +56,23 @@ end
 
 % Pre-update q and check joint limit violation
 iclk = clock;
-q_check = q + ik.stepsize*dq;
-is_not_violated = zeros(1,ik.n_joint_control);
-for i_idx = 1:ik.n_joint_control
-    margin = 1.0*D2R;
-    lower = ik.joint_limits_lower(i_idx)+margin;
-    upper = ik.joint_limits_upper(i_idx)-margin;
-    if ((q_check(i_idx)<lower) && (dq(i_idx)<0)) || ...
-            ((q_check(i_idx)>upper) && (dq(i_idx)>0))
-        flag = 0;
-    else
-        flag = 1;
+if IGNORE_LIMIT == 0
+    is_not_violated = zeros(1,ik.n_joint_control);
+    q_check = q + ik.stepsize*dq;
+    for i_idx = 1:ik.n_joint_control
+        margin = 1.0*D2R;
+        lower = ik.joint_limits_lower(i_idx)+margin;
+        upper = ik.joint_limits_upper(i_idx)-margin;
+        if ((q_check(i_idx)<lower) && (dq(i_idx)<0)) || ...
+                ((q_check(i_idx)>upper) && (dq(i_idx)>0))
+            flag = 0;
+        else
+            flag = 1;
+        end
+        is_not_violated(i_idx) = flag;
     end
-    is_not_violated(i_idx) = flag;
+else
+    is_not_violated = ones(1,ik.n_joint_control);
 end
 if TIME_PROFILING
     ems.violation = etime(clock,iclk)*1000;
@@ -88,8 +97,10 @@ end
 iclk = clock;
 dq = scale_max(dq,ik.stepsize);
 q = q + dq;
-q = min(max(q,ik.joint_limits_lower),ik.joint_limits_upper); % trim limits
-chain = update_chain_q(chain,ik.joint_names_control,q);
+if IGNORE_LIMIT == 0
+    q = min(max(q,ik.joint_limits_lower),ik.joint_limits_upper); % trim limits
+end
+chain = update_chain_q(chain,ik.joint_names_control,q,'IGNORE_LIMIT',IGNORE_LIMIT);
 chain = fk_chain(chain);
 if TIME_PROFILING
     ems.update = etime(clock,iclk)*1000;

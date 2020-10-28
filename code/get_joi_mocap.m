@@ -25,6 +25,10 @@ switch mocap_subject
             9, 10, 11, 3, 4, 5, 19, 15, 16];
         joi_types = {'root','rh','re','rs','lh','le','ls',...
             'rp','rk','ra','lp','lk','la','head','spine1','neck'};
+    case 'eft_skel'
+        joi_idxs = [1, 8, 7, 6, 12, 13, 5, 2, 3, 4, 9, 10, 11];
+        joi_types = {'root','rh','re','rs', 'rp','lp',...
+            'head','spine','neck','neck2','ls','le','lh'};
     otherwise
         joi_idxs = [];
         joi_types = {};

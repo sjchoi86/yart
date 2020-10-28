@@ -9,9 +9,11 @@ function [q,mr_vec] = run_rule_based_simple_motion_retargeting(...
 p = inputParser;
 addParameter(p,'r2n_at_ease_rate',0.5);
 addParameter(p,'q_init','');
+addParameter(p,'IGNORE_LIMIT',0);
 parse(p,varargin{:});
 r2n_at_ease_rate = p.Results.r2n_at_ease_rate;
 q_init = p.Results.q_init;
+IGNORE_LIMIT = p.Results.IGNORE_LIMIT;
 
 % Get JOI Positions of MoCap (pm: position of mocap)
 [pm_root,pm_rs,pm_re,pm_rh,pm_ls,pm_le,pm_lh,pm_neck] = ...
@@ -46,10 +48,11 @@ end
 chain_model = update_chain_q(chain_model,ik.joint_names_control,q_init);
 chain_model = fk_chain(chain_model); % initialize chain
 q = q_init;
-while (ik.tick < 100) % loop until 500 ticks
-    [ik,chain_model,q] = onestep_ik(ik,chain_model,q);
+while (ik.tick < 100) % loop until 100 ticks
+    [ik,chain_model,q] = onestep_ik(ik,chain_model,q,IGNORE_LIMIT);
     [FLAG,ik,best_err] = check_ik_oscilating(ik); % check limbo
     if FLAG
         break;
-    end
+    end    
+    % plot_ik_chain(chain_model,ik);
 end

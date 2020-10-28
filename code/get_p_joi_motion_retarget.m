@@ -5,7 +5,7 @@ function [p_neck_mr,p_rs_mr,p_re_mr,p_rh_mr,p_ls_mr,p_le_mr,p_lh_mr] = ...
 % Get positions of JOI for motion retargeting
 % mr_vec: 
 % --------------------------------------------------------------
-%  (1) root to neck 'at ease' rate (0.0 ~ 1.0)
+%  (1) root to neck 'at ease' rate (0.0 ~ 1.0) 0:do nothing / 1:fully 'at ease'
 %  (2) neck to shoulder 'at ease' rate (0.0 ~ 1.0)
 %  (3) shoulder to elbox 'at ease' rate (0.0 ~ 1.0)
 %  (4) elbow to hand 'at ease' rate (0.0 ~ 1.0)

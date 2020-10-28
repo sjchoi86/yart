@@ -1,3 +1,4 @@
+
 ccc
 %
 % Here, we introduce some basic unit functions that will be used throughout this package
@@ -2080,13 +2081,27 @@ end % for m_idx = 1:n_mocap % for all mocaps
 
 fprintf('Done.\n'); 
 
+%% 48. Make kinematic chain from points
+ccc
+
+% Make chain from random points
+p_root = [0,0,0];
+p_a = 10*rand(3,1);
+p_b = 10*rand(3,1);
+p_c = 10*rand(3,1);
+p_d = 10*rand(3,1);
+p_e = 10*rand(3,1);
+chain = init_chain('Dummy');
+chain = add_joint_to_chain(chain,'a',p_a,[]);
+chain = add_joint_to_chain(chain,'b',p_b,'a');
+chain = add_joint_to_chain(chain,'c',p_c,'b');
+chain = add_joint_to_chain(chain,'d',p_d,'a');
+chain = add_joint_to_chain(chain,'e',p_e,'a');
+
+% Plot
+plot_chain(chain,'fig_idx',1,'jsr',0.4,'PRINT_JOINT_NAME',1);
 
 %%
-
-
-
-
-
 
 
 

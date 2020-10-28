@@ -11,6 +11,7 @@ if isempty(h), for i = 1:10, for j = 1:100, h{i,j}.first_flag = true; end; end; 
 p = inputParser;
 addParameter(p,'fig_idx',1);
 addParameter(p,'subfig_idx',1);
+addParameter(p,'fig_pos',[0.0,0.5,0.3,0.5]);
 addParameter(p,'color','');
 addParameter(p,'colors','');
 addParameter(p,'lw',2);
@@ -18,6 +19,7 @@ addParameter(p,'ls','-');
 parse(p,varargin{:});
 fig_idx = p.Results.fig_idx;
 subfig_idx = p.Results.subfig_idx;
+fig_pos = p.Results.fig_pos;
 color = p.Results.color;
 colors = p.Results.colors;
 lw = p.Results.lw;
@@ -32,7 +34,10 @@ end
 if h{fig_idx,subfig_idx}.first_flag || ~ishandle(h{fig_idx,subfig_idx}.fig)
     h{fig_idx,subfig_idx}.first_flag = false;
     h{fig_idx,subfig_idx}.fig = figure(fig_idx);
+    
+    set_fig_position(h{fig_idx,subfig_idx}.fig,'position',fig_pos);
     hold on;
+    
     
     for i_idx = 1:n
         p1 = p1s(i_idx,:);

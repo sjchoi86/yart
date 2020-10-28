@@ -17,7 +17,7 @@ for i_idx = 1:length(m_idxs)
     m = mocap_infos(m_idxs(i_idx));
     [mocap_name,action_str] = get_cmu_mocap_name(m,'mocap_folder',mocap_folder);
     [skeleton,time] = load_raw_bvh(m.full_path);
-    joi_mocap = get_joi_mocap(m.subject); 
+    joi_mocap = get_joi_mocap(m.subject);
     chains_mocap = get_chain_from_skeleton(skeleton,time,...
         'USE_METER',1,'ROOT_AT_ORIGIN',1,'Z_UP',1,'HZ',30);
     
@@ -150,7 +150,7 @@ plot_skeleton_from_joi(joi_bar,'fig_idx',4,'subfig_idx',2,'color',0.3*[1,1,1],'l
 ccc
 
 % 1. Domain-specific model
-rng(2); % fix seed 
+rng(2); % fix seed
 model_name = 'coman'; % atlas / coman /
 [chain_model,chain_model_sz,joi_model,ws,jnames_ctrl] = ...
     get_robot_model_information_for_motion_retargeting(...
@@ -198,7 +198,129 @@ plot_spheres([p_root,p_rs,p_re,p_rh,p_ls,p_le,p_lh,p_neck]','fig_idx',2,...
 drawnow;
 
 
+%% 4. Motion Retargeting
+ccc
+
+% Configuration
+model_name = 'coman';
+
+% Sample a skeleton pose from CMU mocap
+mocap_infos = get_bvh_infos('mocap_folder','../../../cmu-mocap/');
+rng(13); % fix seed
+r_idxs = randperm(length(mocap_infos));
+m = mocap_infos(r_idxs(1));
+[chains_mocap,joi_mocap,skeleton,time] = get_chains_mocap_with_cache(...
+    m,'RE',0,'cache_folder','../../cache');
+L = length(chains_mocap);
+r_idxs = randperm(L); tick = r_idxs(1);
+chain_mocap = chains_mocap{tick};
+
+% Get the robot model
+[chain_model,chain_model_sz,joi_model,ws,jnames_ctrl] = ...
+    get_robot_model_information_for_motion_retargeting(...
+    model_name,'RE',0,'cache_folder','../../cache','urdf_folder','../../urdf');
+axis_info_ws = get_axis_info_from_chain(ws,chain_model_sz,'margin_rate',0.3);
+
+% Run motion retargeting
+r2n_at_ease_rate = 0.0; % root to neck at-ease rate (0.0~1.0)
+[q_tilde,mr_vec] = run_rule_based_simple_motion_retargeting(...
+    chain_mocap,joi_mocap,chain_model,joi_model,jnames_ctrl,...
+    'r2n_at_ease_rate',r2n_at_ease_rate,'q_init','','IGNORE_LIMIT',1);
+
+% Make the pose feasible
+chain_model = update_chain_q(chain_model,jnames_ctrl,q_tilde);
+chain_model = fk_chain(chain_model); % FK again
+[SC,sc_ij_list] = check_sc(chain_model); % check self-collision
+q_bar = q_tilde; % init q_bar
+q_tpose = zeros(size(q_tilde));
+sc_loop_cnt = 0;
+while SC % loop until collision-free
+    sc_loop_cnt = sc_loop_cnt + 1;
+    sc_link_idxs = unique(sc_ij_list(:));
+    jnames_to_move = [];
+    for l_idx = 1:length(sc_link_idxs)
+        sc_link_idx = sc_link_idxs(l_idx);
+        joint_idx = chain_model.link(sc_link_idx).joint_idx;
+        joint_name = chain_model.joint_names{joint_idx};
+        idx_route = get_idx_route(chain_model,joint_name);
+        jnames_to_move = [jnames_to_move,chain_model.joint_names(idx_route)];
+    end
+    jnames_to_move = unique(jnames_to_move); % joints to control to make collision-free
+    [jnames_to_move,~,match_idx] = intersect(jnames_to_move,jnames_ctrl);
+    % Weighted average with T-pose to make it collision-free
+    mix_ratio = 0.95;
+    q_bar(match_idx) = mix_ratio*q_bar(match_idx) + (1-mix_ratio)*q_tpose(match_idx);
+    chain_model = update_chain_q(chain_model,jnames_ctrl,q_bar,'IGNORE_LIMIT',0);
+    chain_model = fk_chain(chain_model);
+    [SC,sc_ij_list] = check_sc(chain_model); % check self-collision
+end % while SC % loop until collision-free
+
+% Final check with FK
+chain_model = update_chain_q(chain_model,jnames_ctrl,q_bar);
+chain_model = fk_chain(chain_model); % FK again
+SC = check_sc(chain_model);
+
+% Relaxed skeleton (from mocap) - Red
+x_tilde = get_skeleton_of_chain_mocap(chain_mocap,joi_mocap);
+% Feasible skeleton (from robot model) - Black
+x_bar = get_skeleton_of_chain_model(chain_model,joi_model);
+
+% Plot
+view_info = [82,13]; joi_sr = 0.03;
+color_tilde = [0.9,0.4,0.4];
+color_bar = [0.3,0.4,0.3];
+axis_info_ws(3) = axis_info_ws(3)*0.4;
+axis_info_ws(4) = axis_info_ws(4)*0.4;
+axis_info_ws(6) = 0.6;
+% 1. x_tilde
+[d_r2n,d_n2s,d_s2e,d_e2h] = get_link_lengths_chain(chain_model,joi_model);
+plot_skeleton_from_features(x_tilde,'fig_idx',1,'subfig_idx',1,...
+    'd_r2n',d_r2n,'d_n2s',d_n2s,'d_s2e',d_s2e,'d_e2h',d_e2h,...
+    'fig_pos',[0.0,0.6,0.25,0.4],'view_info',view_info,...
+    'color',color_tilde,'joi_sr',joi_sr,'axis_info',axis_info_ws);
+% 2. x_bar
+[d_r2n,d_n2s,d_s2e,d_e2h] = get_link_lengths_chain(chain_model,joi_model);
+plot_skeleton_from_features(x_bar,'fig_idx',2,'subfig_idx',1,...
+    'd_r2n',d_r2n,'d_n2s',d_n2s,'d_s2e',d_s2e,'d_e2h',d_e2h,...
+    'fig_pos',[0.25,0.6,0.25,0.4],'view_info',view_info,...
+    'color',color_bar,'joi_sr',joi_sr,'axis_info',axis_info_ws);
+% 3. q_tilde
+chain_model = update_chain_q(chain_model,jnames_ctrl,q_tilde,'IGNORE_LIMIT',1);
+chain_model = fk_chain(chain_model); % FK again
+plot_chain(chain_model,'fig_idx',3,'subfig_idx',1,...
+    'fig_pos',[0.0,0.1,0.25,0.4],'view_info',view_info,'axis_info',axis_info_ws,...
+    'PLOT_MESH',1,'mfa',0.5,'mfc',color_tilde,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,...
+    'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,'PLOT_CAPSULE',0,...
+    'title_str','','tfs',25);
+% 3. q_bar
+chain_model = update_chain_q(chain_model,jnames_ctrl,q_bar,'IGNORE_LIMIT',0);
+chain_model = fk_chain(chain_model); % FK again
+plot_chain(chain_model,'fig_idx',4,'subfig_idx',1,...
+    'fig_pos',[0.25,0.1,0.25,0.4],'view_info',view_info,'axis_info',axis_info_ws,...
+    'PLOT_MESH',1,'mfa',0.5,'mfc',color_bar,'PLOT_LINK',0,'PLOT_ROTATE_AXIS',0,...
+    'PLOT_JOINT_AXIS',0,'PLOT_JOINT_SPHERE',0,'PRINT_JOINT_NAME',0,'PLOT_CAPSULE',0,...
+    'title_str','','tfs',25);
+
+
 %%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

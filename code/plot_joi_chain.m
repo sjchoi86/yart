@@ -88,7 +88,7 @@ if h{fig_idx,subfig_idx}.first_flag || ...% first flag
         if PRINT_JOI_NAME
             joi_name = joi_chain.types{i_idx};
             h{fig_idx,subfig_idx}.text{i_idx} = text(p(1),p(2),p(3),...
-                joi_name,'fontsize',tfs,'fontname','consolas');
+                [' ',joi_name],'fontsize',tfs,'fontname','consolas');
         end
         
         if PLOT_COORD
@@ -165,7 +165,7 @@ else
         if PRINT_JOI_NAME
             joi_name = joi_chain.types{i_idx};
             h{fig_idx,subfig_idx}.text{i_idx}.Position = p;
-            h{fig_idx,subfig_idx}.text{i_idx}.String = joi_name;
+            h{fig_idx,subfig_idx}.text{i_idx}.String = [' ',joi_name];
         end
         
         if PLOT_COORD
